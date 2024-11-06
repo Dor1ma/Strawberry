@@ -1,0 +1,11 @@
+berry x = 10
+berry name = "Strawberry"
+berry age int = 25
+if x > 5 {
+    say "X is greater than 5"
+} else {
+    say "X is 5 or less"
+}
+for i in range(1, 11) {
+    say i
+}

@@ -7,23 +7,35 @@ find_package(FLEX REQUIRED)
 find_package(BISON REQUIRED)
 
 FLEX_TARGET(Lexer src/lexer/lexer.l ${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp)
-BISON_TARGET(Parser src/parser/parser.y ${CMAKE_CURRENT_BINARY_DIR}/parser.cpp)
+#BISON_TARGET(Parser src/parser/parser.y ${CMAKE_CURRENT_BINARY_DIR}/parser.cpp)
 
-ADD_FLEX_BISON_DEPENDENCY(Lexer Parser)
+# Устанавливаем зависимость, чтобы лексер генерировался до парсера
+#ADD_FLEX_BISON_DEPENDENCY(Lexer Parser)
 
-add_executable(Strawberry
+set(SOURCE_FILES
         ${FLEX_Lexer_OUTPUTS}
-        ${BISON_Parser_OUTPUTS}
+ #       ${BISON_Parser_OUTPUTS}
         src/lexer/lexer.cpp
         src/lexer/lexer.h
         src/lexer/tokens.h
-        #src/main.cpp
-        #src/llvm_codegen/codegen.cpp
-        #src/utils/logger.cpp
+        src/include/tokens.h
+        src/lexer/lexer.cpp
 )
 
-# Подключение библиотек LLVM
-#find_package(LLVM REQUIRED CONFIG)
-#include_directories(${LLVM_INCLUDE_DIRS})
-#add_definitions(${LLVM_DEFINITIONS})
-#target_link_libraries(my_language LLVM)
+add_executable(Strawberry ${SOURCE_FILES})
+include_directories(src/lexer)
+
+target_include_directories(Strawberry PRIVATE ${CMAKE_SOURCE_DIR}/include)
+
+add_executable(lexer_test
+        tests/lexer_test.cpp
+        ${FLEX_Lexer_OUTPUTS}
+        src/lexer/lexer.h
+        src/lexer/tokens.h
+        src/lexer/lexer.cpp
+)
+
+target_include_directories(lexer_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+
+enable_testing()
+add_test(NAME LexerTest COMMAND lexer_test)
