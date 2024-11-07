@@ -47,6 +47,7 @@ std::string tokenToString(int token) {
         case COMMA: return "COMMA";
         case COLON: return "COLON";
         case OP_MODULO: return "OP_MODULO";
+        case ELIF: return "ELIF";
         default: return "UNKNOWN_TOKEN";
     }
 }

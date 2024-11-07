@@ -18,7 +18,7 @@ int yywrap() {
 %}
 
 /* Регулярные выражения для токенов */
-KEYWORD     (berry|say|recipe|if|else|for|in|range|return)
+KEYWORD     (berry|say|recipe|if|else|elif|for|in|range|return)
 TYPE        (int|float|bool|string|void|list)
 BOOLEAN     (true|false)
 ID          [a-zA-Z_][a-zA-Z0-9_]*
@@ -61,6 +61,7 @@ int get_keyword_token(const char* lexeme) {
     if (strcmp(lexeme, "recipe") == 0) return RECIPE;
     if (strcmp(lexeme, "if") == 0) return IF;
     if (strcmp(lexeme, "else") == 0) return ELSE;
+    if (strcmp(lexeme, "elif") == 0) return ELIF;
     if (strcmp(lexeme, "for") == 0) return FOR;
     if (strcmp(lexeme, "in") == 0) return IN;
     if (strcmp(lexeme, "range") == 0) return RANGE;
