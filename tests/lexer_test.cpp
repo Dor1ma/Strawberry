@@ -3,6 +3,7 @@
 #include "lexer.yy.h"
 #include "tokens.h"
 #include <string>
+#include <filesystem>
 
 std::string tokenToString(int token) {
     switch (token) {
@@ -42,7 +43,8 @@ std::string tokenToString(int token) {
 }
 
 int main() {
-    std::ifstream testFile("test_input.txt");
+    std::cout << "Current path: " << std::filesystem::current_path() << std::endl;
+    std::ifstream testFile("../tests/test_input.txt");
 
     if (!testFile) {
         std::cerr << "Failed to open test_input.txt" << std::endl;

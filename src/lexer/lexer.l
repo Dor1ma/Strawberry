@@ -3,6 +3,7 @@
 #include "parser.tab.h"
 #include <string>
 
+YYSTYPE yylval;
 int get_keyword_token(const char* lexeme);
 int get_type_token(const char* lexeme);
 int get_operator_token(const char* lexeme);

@@ -4,12 +4,6 @@
 #include "tokens.h"
 %}
 
-%union {
-    bool boolean;
-    char* str;
-    double num;
-}
-
 %token <boolean> BISON_BOOLEAN
 %token <str> BISON_STRING BISON_IDENTIFIER
 %token <num> BISON_NUMBER
