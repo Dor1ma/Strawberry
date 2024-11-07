@@ -18,15 +18,15 @@ int yywrap() {
 %}
 
 /* Регулярные выражения для токенов */
-KEYWORD     (berry|say|recipe|ingredient|if|else|for|in|range)
+KEYWORD     (berry|say|recipe|if|else|for|in|range|return)
 TYPE        (int|float|bool|string|void|list)
 BOOLEAN     (true|false)
 ID          [a-zA-Z_][a-zA-Z0-9_]*
 STRING      \"(\\.|[^\"])*\"
 NUMBER      [0-9]+(\.[0-9]+)?
-OPERATOR    ([+\-*/=><]|==|!=|>=|<=)
-ASSIGN      =
+OPERATOR    ([+\-*/%=><]|==|!=|>=|<=)
 DELIM       (,|:|\(|\)|\[|\]|\{|\}|;)
+ARROW       ->
 
 %%
 
@@ -37,7 +37,6 @@ DELIM       (,|:|\(|\)|\[|\]|\{|\}|;)
 {STRING}        { yylval.str = strdup(yytext); return BISON_T_STRING; }
 {NUMBER}        { yylval.num = atof(yytext); return BISON_T_NUMBER; }
 {OPERATOR}      { return get_operator_token(yytext); }
-{ASSIGN}        { return ASSIGN; }
 {DELIM}         {
                     if (yytext[0] == '(') return OPEN_PAREN;
                     if (yytext[0] == ')') return CLOSE_PAREN;
@@ -45,8 +44,11 @@ DELIM       (,|:|\(|\)|\[|\]|\{|\}|;)
                     if (yytext[0] == '}') return CLOSE_BRACE;
                     if (yytext[0] == '[') return OPEN_BRACKET;
                     if (yytext[0] == ']') return CLOSE_BRACKET;
-                    return yytext[0]; // для остальных разделителей
+                    if (yytext[0] == ',') return COMMA;
+                    if (yytext[0] == ':') return COLON;
+                    return yytext[0];
                 }
+{ARROW}         { return ARROW; }
 
 [ \t\n]+        ;   // Пропуск пробельных символов
 "//".*          ;   // Однострочные комментарии
@@ -57,12 +59,12 @@ int get_keyword_token(const char* lexeme) {
     if (strcmp(lexeme, "berry") == 0) return BERRY;
     if (strcmp(lexeme, "say") == 0) return SAY;
     if (strcmp(lexeme, "recipe") == 0) return RECIPE;
-    if (strcmp(lexeme, "ingredient") == 0) return INGREDIENT;
     if (strcmp(lexeme, "if") == 0) return IF;
     if (strcmp(lexeme, "else") == 0) return ELSE;
     if (strcmp(lexeme, "for") == 0) return FOR;
     if (strcmp(lexeme, "in") == 0) return IN;
     if (strcmp(lexeme, "range") == 0) return RANGE;
+    if (strcmp(lexeme, "return") == 0) return RETURN;
     return BISON_IDENTIFIER;
 }
 
@@ -81,11 +83,13 @@ int get_operator_token(const char* lexeme) {
     if (strcmp(lexeme, "-") == 0) return OP_MINUS;
     if (strcmp(lexeme, "*") == 0) return OP_MULTIPLY;
     if (strcmp(lexeme, "/") == 0) return OP_DIVIDE;
+    if (strcmp(lexeme, "%") == 0) return OP_MODULO;
     if (strcmp(lexeme, ">") == 0) return OP_GREATER;
     if (strcmp(lexeme, "<") == 0) return OP_LESS;
     if (strcmp(lexeme, "==") == 0) return OP_EQUAL;
     if (strcmp(lexeme, "!=") == 0) return OP_NOT_EQUAL;
     if (strcmp(lexeme, ">=") == 0) return OP_GREATER_EQUAL;
     if (strcmp(lexeme, "<=") == 0) return OP_LESS_EQUAL;
+    if (strcmp(lexeme, "=") == 0) return ASSIGN;
     return OP_UNKNOWN;
 }

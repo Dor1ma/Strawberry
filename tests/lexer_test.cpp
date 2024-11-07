@@ -10,7 +10,6 @@ std::string tokenToString(int token) {
         case BERRY: return "BERRY";
         case SAY: return "SAY";
         case RECIPE: return "RECIPE";
-        case INGREDIENT: return "INGREDIENT";
         case IF: return "IF";
         case ELSE: return "ELSE";
         case FOR: return "FOR";
@@ -43,6 +42,11 @@ std::string tokenToString(int token) {
         case CLOSE_BRACE: return "CLOSE_BRACE";
         case OPEN_BRACKET: return "OPEN_BRACKET";
         case CLOSE_BRACKET: return "CLOSE_BRACKET";
+        case RETURN: return "RETURN";
+        case ARROW: return "ARROW";
+        case COMMA: return "COMMA";
+        case COLON: return "COLON";
+        case OP_MODULO: return "OP_MODULO";
         default: return "UNKNOWN_TOKEN";
     }
 }
