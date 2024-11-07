@@ -16,7 +16,6 @@ set(SOURCE_FILES
         ${FLEX_Lexer_OUTPUTS}
         ${BISON_Parser_OUTPUTS}
         src/lexer/tokens.h
-        src/include/tokens.h
 )
 
 add_executable(Strawberry ${SOURCE_FILES})
