@@ -6,15 +6,15 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(FLEX REQUIRED)
 find_package(BISON REQUIRED)
 
-FLEX_TARGET(Lexer src/lexer/lexer.l ${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp)
-#BISON_TARGET(Parser src/parser/parser.y ${CMAKE_CURRENT_BINARY_DIR}/parser.cpp)
+FLEX_TARGET(Lexer src/lexer/lexer.l ${CMAKE_CURRENT_BINARY_DIR}/lexer.yy.cpp DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/lexer.yy.h)
+BISON_TARGET(Parser src/parser/parser.y ${CMAKE_BINARY_DIR}/parser.tab.cpp
+        DEFINES_FILE ${CMAKE_BINARY_DIR}/parser.tab.h)
 
-# Устанавливаем зависимость, чтобы лексер генерировался до парсера
-#ADD_FLEX_BISON_DEPENDENCY(Lexer Parser)
+ADD_FLEX_BISON_DEPENDENCY(Lexer Parser)
 
 set(SOURCE_FILES
         ${FLEX_Lexer_OUTPUTS}
- #       ${BISON_Parser_OUTPUTS}
+        ${BISON_Parser_OUTPUTS}
         src/lexer/lexer.cpp
         src/lexer/lexer.h
         src/lexer/tokens.h
@@ -36,6 +36,7 @@ add_executable(lexer_test
 )
 
 target_include_directories(lexer_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(lexer_test PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 enable_testing()
 add_test(NAME LexerTest COMMAND lexer_test)

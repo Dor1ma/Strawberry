@@ -1,3 +1,4 @@
+/*
 #include "lexer.h"
 #include <cstdio>
 
@@ -9,4 +10,4 @@ int yywrap() {
 
 void yyerror(const char* s) {
     fprintf(stderr, "Ошибка: %s\n", s);
-}
+}*/

@@ -1,13 +1,8 @@
 #include <iostream>
 #include <fstream>
-#include "lexer.h"
+#include "lexer.yy.h"
 #include "tokens.h"
-#include <cstring>
 #include <string>
-
-extern int yylex();
-extern char* yytext;
-extern YYSTYPE yylval;
 
 std::string tokenToString(int token) {
     switch (token) {
@@ -26,10 +21,10 @@ std::string tokenToString(int token) {
         case TYPE_STRING: return "TYPE_STRING";
         case TYPE_VOID: return "TYPE_VOID";
         case TYPE_LIST: return "TYPE_LIST";
-        case BOOLEAN: return "BOOLEAN";
-        case IDENTIFIER: return "IDENTIFIER";
-        case STRING: return "STRING";
-        case NUMBER: return "NUMBER";
+        //case BOOLEAN: return "BOOLEAN";
+        //case IDENTIFIER: return "IDENTIFIER";
+        //case STRING: return "STRING";
+        //case TOKEN_NUMBER: return "TOKEN_NUMBER";
         case OP_PLUS: return "OP_PLUS";
         case OP_MINUS: return "OP_MINUS";
         case OP_MULTIPLY: return "OP_MULTIPLY";

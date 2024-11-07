@@ -1,3 +1,4 @@
+/*
 #ifndef STRAWBERRY_LEXER_H
 #define STRAWBERRY_LEXER_H
 
@@ -12,5 +13,7 @@ typedef union {
 } YYSTYPE;
 
 extern YYSTYPE yylval;
+extern *YY_BUFFER_STATE;
 
 #endif //STRAWBERRY_LEXER_H
+*/

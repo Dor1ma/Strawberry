@@ -1,6 +1,6 @@
 %{
 #include "tokens.h"
-#include "lexer.h"
+#include "parser.tab.h"
 #include <string>
 
 int get_keyword_token(const char* lexeme);
@@ -14,10 +14,7 @@ extern "C" {
 int yywrap() {
     return 1;
 }
-
-extern YYSTYPE yylval;
 %}
-
 
 /* Регулярные выражения для токенов */
 KEYWORD     (berry|say|recipe|ingredient|if|else|for|in|range)
@@ -34,11 +31,10 @@ DELIM       (,|:|\(|\)|\[|\]|\{|\}|;)
 
 {KEYWORD}       { return get_keyword_token(yytext); }
 {TYPE}          { return get_type_token(yytext); }
-{BOOLEAN}       { yylval.boolean = (strcmp(yytext, "true") == 0); return BOOLEAN; }
-
-{ID}            { yylval.str = strdup(yytext); return IDENTIFIER; }
-{STRING}        { yylval.str = strdup(yytext); return STRING; }
-{NUMBER}        { yylval.num = atof(yytext); return NUMBER; }
+{BOOLEAN}       { yylval.boolean = (strcmp(yytext, "true") == 0); return BISON_BOOLEAN; }
+{ID}            { yylval.str = strdup(yytext); return BISON_IDENTIFIER; }
+{STRING}        { yylval.str = strdup(yytext); return BISON_STRING; }
+{NUMBER}        { yylval.num = atof(yytext); return BISON_NUMBER; }
 {OPERATOR}      { return get_operator_token(yytext); }
 {ASSIGN}        { return ASSIGN; }
 {DELIM}         { return yytext[0]; }
@@ -58,7 +54,7 @@ int get_keyword_token(const char* lexeme) {
     if (strcmp(lexeme, "for") == 0) return FOR;
     if (strcmp(lexeme, "in") == 0) return IN;
     if (strcmp(lexeme, "range") == 0) return RANGE;
-    return IDENTIFIER;
+    return BISON_IDENTIFIER;
 }
 
 int get_type_token(const char* lexeme) {
@@ -68,7 +64,7 @@ int get_type_token(const char* lexeme) {
     if (strcmp(lexeme, "string") == 0) return TYPE_STRING;
     if (strcmp(lexeme, "void") == 0) return TYPE_VOID;
     if (strcmp(lexeme, "list") == 0) return TYPE_LIST;
-    return IDENTIFIER;
+    return BISON_IDENTIFIER;
 }
 
 int get_operator_token(const char* lexeme) {
