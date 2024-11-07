@@ -15,11 +15,8 @@ ADD_FLEX_BISON_DEPENDENCY(Lexer Parser)
 set(SOURCE_FILES
         ${FLEX_Lexer_OUTPUTS}
         ${BISON_Parser_OUTPUTS}
-        src/lexer/lexer.cpp
-        src/lexer/lexer.h
         src/lexer/tokens.h
         src/include/tokens.h
-        src/lexer/lexer.cpp
 )
 
 add_executable(Strawberry ${SOURCE_FILES})
@@ -30,9 +27,7 @@ target_include_directories(Strawberry PRIVATE ${CMAKE_SOURCE_DIR}/include)
 add_executable(lexer_test
         tests/lexer_test.cpp
         ${FLEX_Lexer_OUTPUTS}
-        src/lexer/lexer.h
         src/lexer/tokens.h
-        src/lexer/lexer.cpp
 )
 
 target_include_directories(lexer_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
