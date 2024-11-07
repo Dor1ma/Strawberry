@@ -22,10 +22,10 @@ std::string tokenToString(int token) {
         case TYPE_STRING: return "TYPE_STRING";
         case TYPE_VOID: return "TYPE_VOID";
         case TYPE_LIST: return "TYPE_LIST";
-        //case BOOLEAN: return "BOOLEAN";
-        //case IDENTIFIER: return "IDENTIFIER";
-        //case STRING: return "STRING";
-        //case TOKEN_NUMBER: return "TOKEN_NUMBER";
+        case BISON_T_BOOLEAN: return "BOOLEAN";
+        case BISON_T_IDENTIFIER: return "IDENTIFIER";
+        case BISON_T_STRING: return "STRING";
+        case BISON_T_NUMBER: return "NUMBER";
         case OP_PLUS: return "OP_PLUS";
         case OP_MINUS: return "OP_MINUS";
         case OP_MULTIPLY: return "OP_MULTIPLY";
@@ -37,7 +37,12 @@ std::string tokenToString(int token) {
         case OP_GREATER_EQUAL: return "OP_GREATER_EQUAL";
         case OP_LESS_EQUAL: return "OP_LESS_EQUAL";
         case ASSIGN: return "ASSIGN";
-        case DELIMITER: return "DELIMITER";
+        case OPEN_PAREN: return "OPEN_PAREN";
+        case CLOSE_PAREN: return "CLOSE_PAREN";
+        case OPEN_BRACE: return "OPEN_BRACE";
+        case CLOSE_BRACE: return "CLOSE_BRACE";
+        case OPEN_BRACKET: return "OPEN_BRACKET";
+        case CLOSE_BRACKET: return "CLOSE_BRACKET";
         default: return "UNKNOWN_TOKEN";
     }
 }

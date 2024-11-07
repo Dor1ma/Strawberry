@@ -32,13 +32,21 @@ DELIM       (,|:|\(|\)|\[|\]|\{|\}|;)
 
 {KEYWORD}       { return get_keyword_token(yytext); }
 {TYPE}          { return get_type_token(yytext); }
-{BOOLEAN}       { yylval.boolean = (strcmp(yytext, "true") == 0); return BISON_BOOLEAN; }
-{ID}            { yylval.str = strdup(yytext); return BISON_IDENTIFIER; }
-{STRING}        { yylval.str = strdup(yytext); return BISON_STRING; }
-{NUMBER}        { yylval.num = atof(yytext); return BISON_NUMBER; }
+{BOOLEAN}       { yylval.boolean = (strcmp(yytext, "true") == 0); return BISON_T_BOOLEAN; }
+{ID}            { yylval.str = strdup(yytext); return BISON_T_IDENTIFIER; }
+{STRING}        { yylval.str = strdup(yytext); return BISON_T_STRING; }
+{NUMBER}        { yylval.num = atof(yytext); return BISON_T_NUMBER; }
 {OPERATOR}      { return get_operator_token(yytext); }
 {ASSIGN}        { return ASSIGN; }
-{DELIM}         { return yytext[0]; }
+{DELIM}         {
+                    if (yytext[0] == '(') return OPEN_PAREN;
+                    if (yytext[0] == ')') return CLOSE_PAREN;
+                    if (yytext[0] == '{') return OPEN_BRACE;
+                    if (yytext[0] == '}') return CLOSE_BRACE;
+                    if (yytext[0] == '[') return OPEN_BRACKET;
+                    if (yytext[0] == ']') return CLOSE_BRACKET;
+                    return yytext[0]; // для остальных разделителей
+                }
 
 [ \t\n]+        ;   // Пропуск пробельных символов
 "//".*          ;   // Однострочные комментарии
