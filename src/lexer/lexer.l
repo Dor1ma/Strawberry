@@ -1,20 +1,16 @@
 %{
-#include "tokens.h"
 #include "parser.tab.h"
-#include <string>
+#include <string.h>
 
-YYSTYPE yylval;
 int get_keyword_token(const char* lexeme);
 int get_type_token(const char* lexeme);
 int get_operator_token(const char* lexeme);
 
+#ifdef __cplusplus
 extern "C" {
     int yywrap();
 }
-
-int yywrap() {
-    return 1;
-}
+#endif
 %}
 
 /* Регулярные выражения для токенов */
@@ -33,6 +29,13 @@ ARROW       ->
 {KEYWORD}       { return get_keyword_token(yytext); }
 {TYPE}          { return get_type_token(yytext); }
 {BOOLEAN}       { yylval.boolean = (strcmp(yytext, "true") == 0); return BISON_T_BOOLEAN; }
+"["             { return OPEN_BRACKET; }
+"]"             { return CLOSE_BRACKET; }
+"*"             { return OP_MULTIPLY; }
+"/"             { return OP_DIVIDE; }
+">="            { return OP_GREATER_EQUAL; }
+"<="            { return OP_LESS_EQUAL; }
+"="             { return ASSIGN; }
 {ID}            { yylval.str = strdup(yytext); return BISON_T_IDENTIFIER; }
 {STRING}        { yylval.str = strdup(yytext); return BISON_T_STRING; }
 {NUMBER}        { yylval.num = atof(yytext); return BISON_T_NUMBER; }
@@ -66,7 +69,7 @@ int get_keyword_token(const char* lexeme) {
     if (strcmp(lexeme, "in") == 0) return IN;
     if (strcmp(lexeme, "range") == 0) return RANGE;
     if (strcmp(lexeme, "return") == 0) return RETURN;
-    return BISON_IDENTIFIER;
+    return BISON_T_IDENTIFIER;
 }
 
 int get_type_token(const char* lexeme) {
@@ -76,7 +79,7 @@ int get_type_token(const char* lexeme) {
     if (strcmp(lexeme, "string") == 0) return TYPE_STRING;
     if (strcmp(lexeme, "void") == 0) return TYPE_VOID;
     if (strcmp(lexeme, "list") == 0) return TYPE_LIST;
-    return BISON_IDENTIFIER;
+    return BISON_T_IDENTIFIER;
 }
 
 int get_operator_token(const char* lexeme) {
@@ -93,4 +96,8 @@ int get_operator_token(const char* lexeme) {
     if (strcmp(lexeme, "<=") == 0) return OP_LESS_EQUAL;
     if (strcmp(lexeme, "=") == 0) return ASSIGN;
     return OP_UNKNOWN;
+}
+
+int yywrap() {
+    return 1;
 }

@@ -1,9 +1,11 @@
 #include <iostream>
 #include <fstream>
-#include "lexer.yy.h"
-#include "tokens.h"
+#include "../parser.tab.h"
+#include "../lex.yy.c"
 #include <string>
 #include <filesystem>
+
+YYSTYPE yylval; // Добавьте это определение
 
 std::string tokenToString(int token) {
     switch (token) {
@@ -54,7 +56,7 @@ std::string tokenToString(int token) {
 
 int main() {
     std::cout << "Current path: " << std::filesystem::current_path() << std::endl;
-    std::ifstream testFile("../tests/test_input.txt");
+    std::ifstream testFile(R"(C:\Users\ZGHTL\CLionProjects\Strawberry\tests\test_input.txt)");
 
     if (!testFile) {
         std::cerr << "Failed to open test_input.txt" << std::endl;
