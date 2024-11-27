@@ -41,7 +41,7 @@ extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
 /* Line 2058 of yacc.c  */
-#line 16 "C:\\Users\\ZGHTL\\CLionProjects\\Strawberry\\src\\parser\\parser.y"
+#line 18 "C:\\Users\\ZGHTL\\CLionProjects\\Strawberry\\src\\parser\\parser.y"
 
     #include "C:\\Users\\ZGHTL\\CLionProjects\\Strawberry\\src\\parser\\ast.h"
 
@@ -96,7 +96,8 @@ extern int yydebug;
      RECIPE = 296,
      BISON_T_NUMBER = 297,
      BISON_T_IDENTIFIER = 298,
-     BISON_T_BOOLEAN = 299
+     BISON_T_BOOLEAN = 299,
+     IFX = 300
    };
 #endif
 
@@ -105,7 +106,7 @@ extern int yydebug;
 typedef union YYSTYPE
 {
 /* Line 2058 of yacc.c  */
-#line 19 "C:\\Users\\ZGHTL\\CLionProjects\\Strawberry\\src\\parser\\parser.y"
+#line 21 "C:\\Users\\ZGHTL\\CLionProjects\\Strawberry\\src\\parser\\parser.y"
 
     ASTNode* node;
     double num;
@@ -114,7 +115,7 @@ typedef union YYSTYPE
 
 
 /* Line 2058 of yacc.c  */
-#line 118 "parser.tab.h"
+#line 119 "parser.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

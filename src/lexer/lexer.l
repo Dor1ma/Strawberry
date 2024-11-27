@@ -21,40 +21,48 @@ ID          [a-zA-Z_][a-zA-Z0-9_]*
 STRING      \"(\\.|[^\"])*\"
 NUMBER      [0-9]+(\.[0-9]+)?
 OPERATOR    ([+\-*/%=><]|==|!=|>=|<=)
-DELIM       (,|:|\(|\)|\[|\]|\{|\}|;)
+DELIM       [,:\(\)\[\]\{\};]
 ARROW       ->
 
 %%
 
+"->"            { return ARROW; }
+"+"             { return OP_PLUS; }
+"-"             { return OP_MINUS; }
+"*"             { return OP_MULTIPLY; }
+"/"             { return OP_DIVIDE; }
+"%"             { return OP_MODULO; }
+">="            { return OP_GREATER_EQUAL; }
+"<="            { return OP_LESS_EQUAL; }
+"=="            { return OP_EQUAL; }
+"!="            { return OP_NOT_EQUAL; }
+">"             { return OP_GREATER; }
+"<"             { return OP_LESS; }
+"="             { return ASSIGN; }
+"["             { return OPEN_BRACKET; }
+"]"             { return CLOSE_BRACKET; }
+"("             { return OPEN_PAREN; }
+")"             { return CLOSE_PAREN; }
+"{"             { return OPEN_BRACE; }
+"}"             { return CLOSE_BRACE; }
+","             { return COMMA; }
+":"             { return COLON; }
+"berry"          { return BERRY; }
+"int"            { return TYPE_INT; }
+"list"           { return TYPE_LIST; }
+"if"             { return IF; }
+"say"            { return SAY; }
+
+
 {KEYWORD}       { return get_keyword_token(yytext); }
 {TYPE}          { return get_type_token(yytext); }
 {BOOLEAN}       { yylval.boolean = (strcmp(yytext, "true") == 0); return BISON_T_BOOLEAN; }
-"["             { return OPEN_BRACKET; }
-"]"             { return CLOSE_BRACKET; }
-"*"             { return OP_MULTIPLY; }
-"/"             { return OP_DIVIDE; }
-">="            { return OP_GREATER_EQUAL; }
-"<="            { return OP_LESS_EQUAL; }
-"="             { return ASSIGN; }
 {ID}            { yylval.str = strdup(yytext); return BISON_T_IDENTIFIER; }
 {STRING}        { yylval.str = strdup(yytext); return BISON_T_STRING; }
 {NUMBER}        { yylval.num = atof(yytext); return BISON_T_NUMBER; }
-{OPERATOR}      { return get_operator_token(yytext); }
-{DELIM}         {
-                    if (yytext[0] == '(') return OPEN_PAREN;
-                    if (yytext[0] == ')') return CLOSE_PAREN;
-                    if (yytext[0] == '{') return OPEN_BRACE;
-                    if (yytext[0] == '}') return CLOSE_BRACE;
-                    if (yytext[0] == '[') return OPEN_BRACKET;
-                    if (yytext[0] == ']') return CLOSE_BRACKET;
-                    if (yytext[0] == ',') return COMMA;
-                    if (yytext[0] == ':') return COLON;
-                    return yytext[0];
-                }
-{ARROW}         { return ARROW; }
 
-[ \t\n]+        ;   // Пропуск пробельных символов
-"//".*          ;   // Однострочные комментарии
+[ \t\n]+        ; // Пропуск пробельных символов
+"//".*          ; // Однострочные комментарии
 
 %%
 

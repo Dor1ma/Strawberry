@@ -18,7 +18,8 @@ set(SOURCE_FILES
         ${FLEX_Lexer_OUTPUTS}
         ${BISON_Parser_OUTPUTS}
         src/parser/ast.h
-        main.c
+        src/parser/tokens.h
+        src/parser/ast.c
 )
 
 # Добавляем каталог src/parser в пути для include
