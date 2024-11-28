@@ -1,10 +1,8 @@
 #include <iostream>
 #include <cassert>
 #include <cstring>
-#include <fstream>
 #include <cstdio>
-#include "../../src/parser/ast.h"
-#include "../../parser.tab.h"
+#include "ast.h"
 
 // Прототипы функций парсера
 extern int yyparse();
