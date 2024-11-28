@@ -65,8 +65,8 @@
 /* Line 371 of yacc.c  */
 #line 1 "C:\\Users\\ZGHTL\\CLionProjects\\Strawberry\\src\\parser\\parser.y"
 
-#include "C:\Users\ZGHTL\CLionProjects\Strawberry\src\parser\ast.h"
-#include "C:\Users\ZGHTL\CLionProjects\Strawberry\src\parser\ast.c"
+#include "../../src/parser/ast.h"
+#include "../../src/parser/ast.c"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -114,7 +114,7 @@ extern int yydebug;
 /* Line 387 of yacc.c  */
 #line 18 "C:\\Users\\ZGHTL\\CLionProjects\\Strawberry\\src\\parser\\parser.y"
 
-    #include "C:\\Users\\ZGHTL\\CLionProjects\\Strawberry\\src\\parser\\ast.h"
+    #include "../../src/parser/ast.h"
 
 
 /* Line 387 of yacc.c  */

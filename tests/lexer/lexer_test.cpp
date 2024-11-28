@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
-#include "../parser.tab.h"
-#include "../lex.yy.c"
+#include "../../parser.tab.h"
+#include "../../lex.yy.c"
 #include <string>
 #include <filesystem>
 
@@ -56,7 +56,7 @@ std::string tokenToString(int token) {
 
 int main() {
     std::cout << "Current path: " << std::filesystem::current_path() << std::endl;
-    std::ifstream testFile(R"(C:\Users\ZGHTL\CLionProjects\Strawberry\tests\test_input.txt)");
+    std::ifstream testFile("./tests/lexer/test_input.txt");
 
     if (!testFile) {
         std::cerr << "Failed to open test_input.txt" << std::endl;

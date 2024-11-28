@@ -3,8 +3,8 @@
 #include <cstring>
 #include <fstream>
 #include <cstdio>
-#include "C:\\Users\\ZGHTL\\CLionProjects\\Strawberry\\src\\parser\\ast.h"
-#include "C:\\Users\\ZGHTL\\CLionProjects\\Strawberry\\parser.tab.h"
+#include "../../src/parser/ast.h"
+#include "../../parser.tab.h"
 
 // Прототипы функций парсера
 extern int yyparse();

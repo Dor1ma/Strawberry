@@ -43,7 +43,7 @@ extern int yydebug;
 /* Line 2058 of yacc.c  */
 #line 18 "C:\\Users\\ZGHTL\\CLionProjects\\Strawberry\\src\\parser\\parser.y"
 
-    #include "C:\\Users\\ZGHTL\\CLionProjects\\Strawberry\\src\\parser\\ast.h"
+    #include "../../src/parser/ast.h"
 
 
 /* Line 2058 of yacc.c  */
