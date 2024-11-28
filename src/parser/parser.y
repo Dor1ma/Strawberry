@@ -1,6 +1,6 @@
 %{
-#include "C:\Users\ZGHTL\CLionProjects\Strawberry\src\parser\ast.h"
-#include "C:\Users\ZGHTL\CLionProjects\Strawberry\src\parser\ast.c"
+#include "ast.h"
+#include "ast.c"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -16,7 +16,7 @@ extern ASTNode* root;
 %}
 
 %code requires {
-    #include "C:\\Users\\ZGHTL\\CLionProjects\\Strawberry\\src\\parser\\ast.h"
+    #include "ast.h"
 }
 %union {
     ASTNode* node;
