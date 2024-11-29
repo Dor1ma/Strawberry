@@ -40,7 +40,7 @@ extern ASTNode* root;
 %token <boolean> BISON_T_BOOLEAN
 
 
-%type <node> program statement_list statement variable_declaration function_declaration control_statement expression argument_list parameter_list parameter
+%type <node> program statement_list statement variable_declaration function_declaration control_statement expression argument_list parameter_list parameter else_branch
 
 
 %nonassoc IFX
@@ -94,23 +94,22 @@ parameter:
 ;
 
 control_statement:
-    IF expression COLON statement_list
-    {
-        $$ = create_if_statement($2, $4, NULL, NULL);
-    }
-    | IF expression COLON statement_list ELSE COLON statement_list
-    {
-        $$ = create_if_statement($2, $4, NULL, $7);
-    }
-    | IF expression COLON statement_list ELIF expression COLON statement_list
-    {
-        $$ = create_if_statement($2, $4, $6, NULL);
-    };
-
-    | FOR BISON_T_IDENTIFIER IN RANGE OPEN_PAREN expression COMMA expression CLOSE_PAREN OPEN_BRACE statement_list CLOSE_BRACE {
-        $$ = create_for_loop(create_identifier($2), $6, $8, $11);
+    IF expression COLON statement_list else_branch {
+        $$ = create_if_statement($2, $4, $5);
     }
 ;
+
+else_branch:
+    /* empty */ { $$ = NULL; }
+    | ELSE COLON statement_list {
+        $$ = $3;  // Прямая ссылка на тело else
+    }
+    | ELIF expression COLON statement_list else_branch {
+        $$ = create_if_statement($2, $4, $5); // Рекурсивное создание elif
+    }
+;
+
+
 
 expression:
     BISON_T_NUMBER { $$ = create_literal($1); }

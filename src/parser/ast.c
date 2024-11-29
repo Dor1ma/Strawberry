@@ -25,17 +25,18 @@ ASTNode* create_typed_variable_declaration(const char* name, const char* type, A
     return node;
 }
 
-ASTNode* create_if_statement(ASTNode* condition, ASTNode* body, ASTNode* elif_branch, ASTNode* else_branch) {
+ASTNode* create_if_statement(ASTNode* condition, ASTNode* body, ASTNode* else_branch) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
-    node->type = NODE_LIST; // Используем NODE_LIST для представления всех веток
-    node->data.list.element_count = 4;
-    node->data.list.elements = (ASTNode**)malloc(4 * sizeof(ASTNode*));
-    node->data.list.elements[0] = condition;  // Условие
-    node->data.list.elements[1] = body;       // Тело if
-    node->data.list.elements[2] = elif_branch; // elif
-    node->data.list.elements[3] = else_branch; // else
+    node->type = NODE_IF;  // Новый тип узла
+    node->data.list.element_count = 3;  // Узел содержит три элемента
+    node->data.list.elements = (ASTNode**)malloc(3 * sizeof(ASTNode*));
+
+    node->data.list.elements[0] = condition;   // Условие
+    node->data.list.elements[1] = body;        // Тело if
+    node->data.list.elements[2] = else_branch; // Ветка else или NULL
     return node;
 }
+
 
 ASTNode* create_for_loop(ASTNode* variable, ASTNode* start, ASTNode* end, ASTNode* body) {
     ASTNode* node = create_node("for_loop");
@@ -142,3 +143,4 @@ ASTNode* create_list(ASTNode* elements) {
 
     return node;
 }
+

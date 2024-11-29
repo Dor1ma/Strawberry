@@ -5,6 +5,9 @@
 #define NODE_IDENTIFIER 2
 #define NODE_BINARY_OP 3
 #define NODE_LIST 4
+#define NODE_IF 5
+#define NODE_ELIF 6
+#define NODE_ELSE 7
 
 typedef struct ASTNode ASTNode;
 
@@ -28,6 +31,13 @@ typedef struct {
     int element_count;   // Количество элементов
 } ListData;
 
+typedef struct {
+    ASTNode* condition;
+    ASTNode* body;
+    ASTNode* else_branch;
+} IfStatementData;
+
+
 struct ASTNode {
     int type;  // Тип узла
     union {
@@ -35,6 +45,7 @@ struct ASTNode {
         IdentifierData identifier;  // Идентификаторы
         BinaryOpData binary_op;  // Бинарные операции
         ListData list;  // Списки
+        IfStatementData if_statement; // Узлы if/elif/else
     } data;
     ASTNode* next;  // Следующий узел в списке (для построения цепочек)
 };
@@ -45,11 +56,12 @@ ASTNode* create_literal_string(const char* value);
 ASTNode* create_identifier(char* name);
 ASTNode* create_binary_op(ASTNode* left, int op, ASTNode* right);
 ASTNode* create_list(ASTNode* elements);
+ASTNode* create_if_statement(ASTNode* condition, ASTNode* body, ASTNode* else_branch);
+void print_ast(ASTNode* root);
 
 ASTNode* append_statements(ASTNode* list, ASTNode* statement);
 ASTNode* create_variable_declaration(const char* name, ASTNode* value);
 ASTNode* create_typed_variable_declaration(const char* name, const char* type, ASTNode* value);
-ASTNode* create_if_statement(ASTNode* condition, ASTNode* body, ASTNode* elif_branch, ASTNode* else_branch);
 ASTNode* create_for_loop(ASTNode* variable, ASTNode* start, ASTNode* end, ASTNode* body);
 ASTNode* create_function_declaration(const char* name, ASTNode* params, const char* return_type, ASTNode* body);
 ASTNode* append_parameters(ASTNode* list, ASTNode* parameter);
