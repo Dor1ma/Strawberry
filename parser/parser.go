@@ -283,12 +283,7 @@ func (p *Parser) parseAssignment() ast.Expression {
 		switch e := expr.(type) {
 		default:
 			p.error("Invalid assignment target.")
-		case *ast.VariableExpr:
-			return &ast.AssignExpr{
-				Left:  e,
-				Value: v,
-			}
-		case *ast.ArrayIndex:
+		case ast.LeftExpr:
 			return &ast.AssignExpr{
 				Left:  e,
 				Value: v,

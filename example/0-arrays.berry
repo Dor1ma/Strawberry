@@ -1,2 +1,8 @@
 var a = [1, 2, 3];
+
 a[0] = 42;
+
+var b = a[0];
+
+print b;
+print a;

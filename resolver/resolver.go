@@ -54,6 +54,8 @@ func Resolve(node ast.Node) {
 		resolveThisExpr(n)
 	case *ast.ArrayExpr:
 		resolveArrayExpr(n)
+	case *ast.ArrayIndex:
+		resolveArrayIndex(n)
 	case *ast.Literal:
 		// скип
 	case *ast.BlockStmt:
@@ -109,15 +111,27 @@ func resolveLocal(expr ast.Expression, name string) {
 
 func resolveAssignExpr(expr *ast.AssignExpr) {
 	Resolve(expr.Value)
-	left := expr.Left.(*ast.VariableExpr)
 
-	resolveLocal(expr.Left, left.Name)
+	switch left := expr.Left.(type) {
+	case *ast.VariableExpr:
+		resolveLocal(expr.Left, left.Name)
+	case *ast.ArrayIndex:
+		Resolve(left.Index)
+		resolveLocal(left.Array, left.String())
+	default:
+		panic("unsupported assignable type")
+	}
 }
 
 func resolveArrayExpr(expr *ast.ArrayExpr) {
 	for _, element := range expr.Elements {
 		Resolve(element)
 	}
+}
+
+func resolveArrayIndex(expr *ast.ArrayIndex) {
+	Resolve(expr.Array)
+	Resolve(expr.Index)
 }
 
 func resolveBinaryExpr(expr *ast.BinaryExpr) {
