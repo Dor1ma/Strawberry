@@ -49,6 +49,9 @@ const (
 	LOOP_END_LABEL   = "loop_end_"    // Метка конца цикла
 	END_LABEL        = "end_label_"   // Метка конца
 
+	SCOPE_START = "scope_start"
+	SCOPE_END   = "scope_end"
+
 	NULL = "NULL"
 )
 
@@ -265,9 +268,13 @@ func (cg *CodeGenerator) GenerateStatement(stmt ast.Statement) {
 }
 
 func (cg *CodeGenerator) GenerateBlockStmt(stmt *ast.BlockStmt) {
+	cg.emit(SCOPE_START, "")
+
 	for _, statement := range stmt.Statements {
 		cg.GenerateStatement(statement)
 	}
+
+	cg.emit(SCOPE_END, "")
 }
 
 func (cg *CodeGenerator) GenerateReturnStmt(stmt *ast.ReturnStmt) {
