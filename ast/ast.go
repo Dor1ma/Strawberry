@@ -30,6 +30,11 @@ type LeftExpr interface {
 	leftExpr()
 }
 
+type DotExpr interface {
+	Expression
+	dotExpr()
+}
+
 func (*Identifier) node() {}
 
 func (*Literal) node() {}
@@ -112,6 +117,11 @@ type (
 		Index Expression
 	}
 
+	ArrayAppendExpr struct {
+		Array ArrayExpr
+		Value Expression
+	}
+
 	// ----
 
 	GetExpr struct {
@@ -159,8 +169,12 @@ func (*ThisExpr) expr()     {}
 func (*UnaryExpr) expr()    {}
 func (*VariableExpr) expr() {}
 
-func (*ArrayExpr) expr()  {}
-func (*ArrayIndex) expr() {}
+func (*ArrayExpr) expr()       {}
+func (*ArrayIndex) expr()      {}
+func (*ArrayAppendExpr) expr() {}
+
+func (*GetExpr) dotExpr()         {}
+func (*ArrayAppendExpr) dotExpr() {}
 
 func (e *AssignExpr) String() string {
 	return fmt.Sprintf("%s = %s", e.Left, e.Value)

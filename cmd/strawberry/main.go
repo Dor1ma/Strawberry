@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/Dor1ma/Strawberry/ast"
-	bytecodegen "github.com/Dor1ma/Strawberry/bytecode"
 	"github.com/Dor1ma/Strawberry/cmd/strawberry/repl"
 	"github.com/Dor1ma/Strawberry/interpreter"
 	"github.com/Dor1ma/Strawberry/lexer"
@@ -25,14 +23,14 @@ func main() {
 
 			interpreter.Interpret(statements)
 
-			for i := 0; i < len(statements); i++ {
+			/*for i := 0; i < len(statements); i++ {
 				fmt.Println(ast.PrettyPrint(statements[i], 1))
 			}
 
 			generator := bytecodegen.CodeGenerator{}
 
 			generator.GenerateProgram(statements)
-			generator.PrintBytecode()
+			generator.PrintBytecode()*/
 		}
 		return
 	}

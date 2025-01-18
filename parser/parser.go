@@ -404,7 +404,7 @@ func (p *Parser) parseCall() ast.Expression {
 			expr = p.finishCall(expr)
 		} else if p.match(token.Dot) {
 			name := p.lit
-			p.expect(token.Identifier, "Expect property name after '.'.")
+			p.expect(token.Identifier, "Expect property or method name after '.'.")
 			expr = &ast.GetExpr{Object: expr, Name: name}
 		} else if p.match(token.LeftBracket) {
 			index := p.parseExpression()

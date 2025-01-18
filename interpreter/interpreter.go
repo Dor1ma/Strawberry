@@ -519,6 +519,15 @@ func doPlusOperation(left, right valuer.Valuer) valuer.Valuer {
 			s, _ := l.(*valuer.String)
 			return &valuer.String{Value: s.Value + r.Value}
 		}
+
+	case *valuer.Array:
+		switch r := right.(type) {
+		case *valuer.Number, *valuer.String:
+			l.Elements = append(l.Elements, r)
+			return l
+		default:
+			panic("unsupported type for array append")
+		}
 	}
 
 	errors.Error(token.Plus, "Operands must be numbers or strings.")
