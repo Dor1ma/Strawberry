@@ -1,0 +1,28 @@
+var N = 10000;
+var primes = [0, 0];
+
+for (var i = 3; i <= N; i = i + 1) {
+    primes = primes + i;
+}
+
+var i = 2;
+while (i <= N - 1){
+    var compare = primes[i];
+    if (compare != 0){
+        var j = i + i;
+        while (j <= N - 1) {
+            primes[j] = 0;
+            j = j + i;
+        }
+    }
+    i = i + 1;
+}
+
+
+for (var k = 0; k < N; k = k + 1) {
+    var prime = primes[k];
+
+    if (prime != 0) {
+        print k;
+    }
+}

@@ -1,8 +1,5 @@
-var a = [1, 2, 3];
+var a = [1];
 
-a[0] = 42;
+a = a + 1;
 
-var b = a[0];
-
-print b;
 print a;
