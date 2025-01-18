@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/Dor1ma/Strawberry/cmd/lox/repl"
+	"github.com/Dor1ma/Strawberry/cmd/strawberry/repl"
 	"github.com/Dor1ma/Strawberry/interpreter"
 	"github.com/Dor1ma/Strawberry/lexer"
 	"github.com/Dor1ma/Strawberry/parser"
@@ -21,6 +21,10 @@ func main() {
 		p := parser.New(l)
 		if statements, err := p.Parse(); err == nil && len(statements) != 0 {
 			interpreter.Interpret(statements)
+
+			/*for i := 0; i < len(statements); i++ {
+				fmt.Println(statements[i])
+			}*/
 		}
 		return
 	}

@@ -2,7 +2,7 @@ package token
 
 import "encoding/json"
 
-// Token is a lexical token of lox programing language.
+// Token - лексические токены
 type Token int
 
 const (
@@ -12,26 +12,28 @@ const (
 
 	// single-character
 
-	LeftParen  // (
-	RightParen // )
-	LeftBrace  // {
-	RightBrace // }
-	Comma      // ,
-	Dot        // .
-	Minus      // -
-	Plus       // +
-	Semicolon  // ;
-	Slash      // /
-	Star       // *
+	LeftParen    // (
+	RightParen   // )
+	LeftBrace    // {
+	RightBrace   // }
+	LeftBracket  // [
+	RightBracket // ]
+	Comma        // ,
+	Dot          // .
+	Minus        // -
+	Plus         // +
+	Semicolon    // ;
+	Slash        // /
+	Star         // *
 
-	Bang         // !
-	BangEqual    // !=
-	Equal        // =
-	EqualEqual   // ==
-	Greater      // >
-	GreaterEqual // >=
-	Less         // <
-	LessEqual    // <=
+	Bang               // !
+	BangEqual          // !=
+	Equal              // =
+	EqualEqual         // ==
+	Greater            // >
+	GreaterThanOrEqual // >=
+	Less               // <
+	LessThanOrEqual    // <=
 
 	Identifier // abc
 	String     // "abc"
@@ -60,47 +62,49 @@ const (
 )
 
 var tokens = [...]string{
-	Illegal:      "illegal",
-	EOF:          "EOF",
-	Comment:      "comment",
-	LeftParen:    "(",
-	RightParen:   ")",
-	LeftBrace:    "{",
-	RightBrace:   "}",
-	Comma:        ",",
-	Dot:          ".",
-	Minus:        "-",
-	Plus:         "+",
-	Semicolon:    ";",
-	Slash:        "/",
-	Star:         "*",
-	Bang:         "!",
-	BangEqual:    "!=",
-	Equal:        "=",
-	EqualEqual:   "==",
-	Greater:      ">",
-	GreaterEqual: ">=",
-	Less:         "<",
-	LessEqual:    "<=",
-	Identifier:   "identifier",
-	String:       "string",
-	Number:       "number",
-	And:          "and",
-	Class:        "class",
-	Else:         "else",
-	False:        "false",
-	Fun:          "fun",
-	For:          "for",
-	If:           "if",
-	Nil:          "nil",
-	Or:           "or",
-	Print:        "print",
-	Return:       "return",
-	Super:        "super",
-	This:         "this",
-	True:         "true",
-	Var:          "var",
-	While:        "while",
+	Illegal:            "illegal",
+	EOF:                "EOF",
+	Comment:            "comment",
+	LeftParen:          "(",
+	RightParen:         ")",
+	LeftBrace:          "{",
+	RightBrace:         "}",
+	LeftBracket:        "[",
+	RightBracket:       "]",
+	Comma:              ",",
+	Dot:                ".",
+	Minus:              "-",
+	Plus:               "+",
+	Semicolon:          ";",
+	Slash:              "/",
+	Star:               "*",
+	Bang:               "!",
+	BangEqual:          "!=",
+	Equal:              "=",
+	EqualEqual:         "==",
+	Greater:            ">",
+	GreaterThanOrEqual: ">=",
+	Less:               "<",
+	LessThanOrEqual:    "<=",
+	Identifier:         "identifier",
+	String:             "string",
+	Number:             "number",
+	And:                "and",
+	Class:              "class",
+	Else:               "else",
+	False:              "false",
+	Fun:                "fun",
+	For:                "for",
+	If:                 "if",
+	Nil:                "nil",
+	Or:                 "or",
+	Print:              "print",
+	Return:             "return",
+	Super:              "super",
+	This:               "this",
+	True:               "true",
+	Var:                "var",
+	While:              "while",
 }
 
 var keywords = map[string]Token{}

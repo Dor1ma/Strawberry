@@ -34,7 +34,7 @@ func initEnv() {
 	env = globals
 }
 
-func Interpret(statements []ast.Stmt) {
+func Interpret(statements []ast.Statement) {
 	defer func() {
 		if r := recover(); r != nil {
 			if err, ok := r.(errors.RuntimeError); ok {
@@ -75,9 +75,16 @@ func Eval(node ast.Node) valuer.Valuer {
 		return evalUnaryExpr(n)
 	case *ast.GroupingExpr:
 		return Eval(n.Expression)
+	case *ast.ArrayExpr:
+		return evalArrayExpr(n)
+	case *ast.ArrayIndex:
+		return evalArrayIndex(n)
 	case *ast.VariableExpr:
 		return evalVariableExpr(n)
 	case *ast.AssignExpr:
+		if arrayIndex, ok := n.Left.(*ast.ArrayIndex); ok {
+			return evalArrayIndexAssign(arrayIndex, Eval(n.Value))
+		}
 		return evalAssignExpr(n)
 	case *ast.LogicalExpr:
 		return evalLogicalExpr(n)
@@ -135,6 +142,44 @@ func evalLiteral(lit *ast.Literal) valuer.Valuer {
 	panic("unexpected literal.")
 }
 
+func evalArrayExpr(expr *ast.ArrayExpr) valuer.Valuer {
+	elements := make([]valuer.Valuer, len(expr.Elements))
+	for i, element := range expr.Elements {
+		elements[i] = Eval(element)
+	}
+	return &valuer.Array{Elements: elements}
+}
+
+func evalArrayIndex(expr *ast.ArrayIndex) valuer.Valuer {
+	array, index := getTargetAndIndex(expr)
+
+	return array.Elements[int(index.Value)]
+}
+
+func evalArrayIndexAssign(expr *ast.ArrayIndex, value valuer.Valuer) valuer.Valuer {
+	array, index := getTargetAndIndex(expr)
+
+	array.Elements[int(index.Value)] = value
+	return value
+}
+
+func getTargetAndIndex(expr *ast.ArrayIndex) (*valuer.Array, *valuer.Number) {
+	target := Eval(expr.Array)
+	index := Eval(expr.Index)
+
+	array, ok := target.(*valuer.Array)
+	if !ok {
+		errors.Error(token.LeftBracket, "Only arrays can be indexed.")
+	}
+
+	idx, ok := index.(*valuer.Number)
+	if !ok || idx.Value < 0 || int(idx.Value) >= len(array.Elements) {
+		errors.Error(token.LeftBracket, "Index out of bounds.")
+	}
+
+	return array, idx
+}
+
 func evalBinaryExpr(expr *ast.BinaryExpr) valuer.Valuer {
 	left := Eval(expr.Left)
 	right := Eval(expr.Right)
@@ -150,7 +195,7 @@ func evalBinaryExpr(expr *ast.BinaryExpr) valuer.Valuer {
 		a, b := checkNumberOperands(op, left, right)
 		t := a > b
 		return toBooleanValuer(t)
-	case token.GreaterEqual:
+	case token.GreaterThanOrEqual:
 		a, b := checkNumberOperands(op, left, right)
 		t := a >= b
 		return toBooleanValuer(t)
@@ -158,7 +203,7 @@ func evalBinaryExpr(expr *ast.BinaryExpr) valuer.Valuer {
 		a, b := checkNumberOperands(op, left, right)
 		t := a < b
 		return toBooleanValuer(t)
-	case token.LessEqual:
+	case token.LessThanOrEqual:
 		a, b := checkNumberOperands(op, left, right)
 		t := a <= b
 		return toBooleanValuer(t)
@@ -215,7 +260,8 @@ func evalVariableExpr(expr *ast.VariableExpr) valuer.Valuer {
 
 func evalAssignExpr(expr *ast.AssignExpr) valuer.Valuer {
 	v := Eval(expr.Value)
-	name, distance := expr.Left.Name, expr.Left.Distance
+	left := expr.Left.(*ast.VariableExpr)
+	name, distance := left.Name, left.Distance
 	if distance >= 0 {
 		if ok := env.AssignAt(distance, name, v); ok {
 			return v
@@ -226,6 +272,7 @@ func evalAssignExpr(expr *ast.AssignExpr) valuer.Valuer {
 		}
 	}
 	errors.Error(token.Equal, fmt.Sprintf("Undefined variable %s.", expr.Left))
+
 	return nil
 }
 
@@ -268,7 +315,7 @@ func evalCallExpr(expr *ast.CallExpr) valuer.Valuer {
 	}
 }
 
-func constructInstance(c *valuer.ClassValue, arguments []ast.Expr) *valuer.Instance {
+func constructInstance(c *valuer.ClassValue, arguments []ast.Expression) *valuer.Instance {
 	instance := &valuer.Instance{Klass: c}
 	initializer := c.FindMethod("init")
 	if initializer != nil {
@@ -277,7 +324,7 @@ func constructInstance(c *valuer.ClassValue, arguments []ast.Expr) *valuer.Insta
 	return instance
 }
 
-func callFunction(function *valuer.Function, arguments []ast.Expr) valuer.Valuer {
+func callFunction(function *valuer.Function, arguments []ast.Expression) valuer.Valuer {
 	environment := function.Closure
 	environment = valuer.NewEnclosing(function.Closure)
 	for i, param := range function.Params {
@@ -356,7 +403,7 @@ func evalBlockStmt(block *ast.BlockStmt) valuer.Valuer {
 	return executeBlock(block.Statements, valuer.NewEnclosing(env))
 }
 
-func executeBlock(statements []ast.Stmt, environment *valuer.Environment) valuer.Valuer {
+func executeBlock(statements []ast.Statement, environment *valuer.Environment) valuer.Valuer {
 	previous := env
 	env = environment
 	defer func() {
@@ -429,7 +476,7 @@ func evalClassStmt(stmt *ast.ClassStmt) {
 	}
 	cl := &valuer.ClassValue{
 		Name:    stmt.Name,
-		Mehtods: methods,
+		Methods: methods,
 	}
 	env.Define(stmt.Name, cl)
 }

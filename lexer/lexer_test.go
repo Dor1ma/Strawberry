@@ -37,9 +37,9 @@ func TestReadSimpleToken(t *testing.T) {
 		{token.BangEqual, "!="},
 
 		{token.Greater, ">"},
-		{token.GreaterEqual, ">="},
+		{token.GreaterThanOrEqual, ">="},
 		{token.Less, "<"},
-		{token.LessEqual, "<="},
+		{token.LessThanOrEqual, "<="},
 	}
 
 	for i, test := range tests {
@@ -66,7 +66,7 @@ func TestReadString(t *testing.T) {
 		"字符串",
 		"lox语言",
 	}
-	input := `"" "abc xyz" "\u5b57符串" "lox\u8Bed言"`
+	input := `"" "abc xyz" "\u5b57符串" "strawberry\u8Bed言"`
 
 	l := New(input)
 	for _, expected := range tests {

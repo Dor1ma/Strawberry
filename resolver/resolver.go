@@ -9,7 +9,7 @@ import (
 type functionType int
 
 const (
-	FunctionNone functionType = iota // not return
+	FunctionNone functionType = iota
 	Function
 	Initializer
 	Method
@@ -52,8 +52,10 @@ func Resolve(node ast.Node) {
 		resolveSetExpr(n)
 	case *ast.ThisExpr:
 		resolveThisExpr(n)
+	case *ast.ArrayExpr:
+		resolveArrayExpr(n)
 	case *ast.Literal:
-		// do nothing.
+		// скип
 	case *ast.BlockStmt:
 		resolveBlockStmt(n)
 	case *ast.VarStmt:
@@ -83,10 +85,9 @@ func resolveVariableExpr(expr *ast.VariableExpr) {
 	resolveLocal(expr, expr.Name)
 }
 
-func resolveLocal(expr ast.Expr, name string) {
+func resolveLocal(expr ast.Expression, name string) {
 	switch n := expr.(type) {
 	case *ast.VariableExpr:
-		// if variable doesn't exist in scopes, we regard it as a glabol variable.
 		for i := len(scopes) - 1; i >= 0; i-- {
 			if _, ok := scopes[i][name]; ok {
 				n.Distance = len(scopes) - 1 - i
@@ -108,7 +109,15 @@ func resolveLocal(expr ast.Expr, name string) {
 
 func resolveAssignExpr(expr *ast.AssignExpr) {
 	Resolve(expr.Value)
-	resolveLocal(expr.Left, expr.Left.Name)
+	left := expr.Left.(*ast.VariableExpr)
+
+	resolveLocal(expr.Left, left.Name)
+}
+
+func resolveArrayExpr(expr *ast.ArrayExpr) {
+	for _, element := range expr.Elements {
+		Resolve(element)
+	}
 }
 
 func resolveBinaryExpr(expr *ast.BinaryExpr) {
@@ -160,7 +169,7 @@ func resolveBlockStmt(block *ast.BlockStmt) {
 	scopes.end()
 }
 
-func resolveBlock(statements []ast.Stmt) {
+func resolveBlock(statements []ast.Statement) {
 	for _, stmt := range statements {
 		Resolve(stmt)
 	}
