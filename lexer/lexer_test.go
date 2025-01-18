@@ -31,10 +31,10 @@ func TestReadSimpleToken(t *testing.T) {
 		{token.Slash, "/"},
 
 		{token.Star, "*"},
-		{token.Bang, "!"},
+		{token.Not, "!"},
 		{token.Equal, "="},
 		{token.EqualEqual, "=="},
-		{token.BangEqual, "!="},
+		{token.NotEqual, "!="},
 
 		{token.Greater, ">"},
 		{token.GreaterThanOrEqual, ">="},

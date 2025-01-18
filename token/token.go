@@ -26,8 +26,8 @@ const (
 	Slash        // /
 	Star         // *
 
-	Bang               // !
-	BangEqual          // !=
+	Not                // !
+	NotEqual           // !=
 	Equal              // =
 	EqualEqual         // ==
 	Greater            // >
@@ -78,8 +78,8 @@ var tokens = [...]string{
 	Semicolon:          ";",
 	Slash:              "/",
 	Star:               "*",
-	Bang:               "!",
-	BangEqual:          "!=",
+	Not:                "!",
+	NotEqual:           "!=",
 	Equal:              "=",
 	EqualEqual:         "==",
 	Greater:            ">",

@@ -356,5 +356,11 @@ func (s *WhileStmt) String() string {
 	return sb.String()
 }
 
+// PrettyPrint - печатает AST с отступами для лучшего восприятия.
+func PrettyPrint(node Statement, indentLevel int) string {
+	indent := strings.Repeat("  ", indentLevel)
+	return fmt.Sprintf("%s%s", indent, node.String())
+}
+
 func (e *VariableExpr) leftExpr() {}
 func (e *ArrayIndex) leftExpr()   {}

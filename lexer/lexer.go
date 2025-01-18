@@ -212,10 +212,10 @@ func (l *Lexer) NextToken() (tok token.Token, literal string) {
 		literal = "*"
 	case '!':
 		if l.match('=') {
-			tok = token.BangEqual
+			tok = token.NotEqual
 			literal = "!="
 		} else {
-			tok = token.Bang
+			tok = token.Not
 			literal = "!"
 		}
 		return

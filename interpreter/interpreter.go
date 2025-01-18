@@ -188,7 +188,7 @@ func evalBinaryExpr(expr *ast.BinaryExpr) valuer.Valuer {
 	case token.EqualEqual:
 		t := isEqual(left, right)
 		return toBooleanValuer(t)
-	case token.BangEqual:
+	case token.NotEqual:
 		t := !isEqual(left, right)
 		return toBooleanValuer(t)
 	case token.Greater:
@@ -232,7 +232,7 @@ func evalBinaryExpr(expr *ast.BinaryExpr) valuer.Valuer {
 func evalUnaryExpr(expr *ast.UnaryExpr) valuer.Valuer {
 	right := Eval(expr.Right)
 	switch op := expr.Operator; op {
-	case token.Bang:
+	case token.Not:
 		t := !isTruthy(right)
 		return toBooleanValuer(t)
 	case token.Minus:

@@ -328,7 +328,7 @@ func (p *Parser) parseAnd() ast.Expression {
 func (p *Parser) parseEquality() ast.Expression {
 	expr := p.parseComparison()
 	operator := p.tok
-	for p.match(token.EqualEqual, token.BangEqual) {
+	for p.match(token.EqualEqual, token.NotEqual) {
 		right := p.parseComparison()
 		expr = &ast.BinaryExpr{
 			Left:     expr,
@@ -387,7 +387,7 @@ func (p *Parser) parseMultiplacation() ast.Expression {
 
 func (p *Parser) parseUnary() ast.Expression {
 	operator := p.tok
-	if p.match(token.Bang, token.Minus) {
+	if p.match(token.Not, token.Minus) {
 		right := p.parseUnary()
 		return &ast.UnaryExpr{
 			Operator: operator,

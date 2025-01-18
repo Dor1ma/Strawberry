@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/Dor1ma/Strawberry/ast"
+	bytecodegen "github.com/Dor1ma/Strawberry/bytecode"
 	"github.com/Dor1ma/Strawberry/cmd/strawberry/repl"
 	"github.com/Dor1ma/Strawberry/interpreter"
 	"github.com/Dor1ma/Strawberry/lexer"
@@ -20,17 +22,22 @@ func main() {
 		l := lexer.New(string(b))
 		p := parser.New(l)
 		if statements, err := p.Parse(); err == nil && len(statements) != 0 {
+
 			interpreter.Interpret(statements)
 
-			/*for i := 0; i < len(statements); i++ {
-				fmt.Println(statements[i])
-			}*/
+			for i := 0; i < len(statements); i++ {
+				fmt.Println(ast.PrettyPrint(statements[i], 1))
+			}
+
+			generator := bytecodegen.CodeGenerator{}
+
+			generator.GenerateProgram(statements)
+			generator.PrintBytecode()
 		}
 		return
 	}
 
-	fmt.Fprintln(os.Stdout, "Lox programing language.")
-	fmt.Fprintln(os.Stdout, "Feel free to type commands.")
+	fmt.Fprintln(os.Stdout, "Strawberry.")
 	fmt.Fprintln(os.Stdout, "Type \"exit\" to exit.")
 	repl.Start(os.Stdin, os.Stdout)
 }
