@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Dor1ma/Strawberry/ast"
 	"github.com/Dor1ma/Strawberry/token"
+	"strconv"
 )
 
 const (
@@ -38,10 +39,11 @@ const (
 	GET_PROPERTY = "GET_PROPERTY" // Получить свойство объекта
 	SET_PROPERTY = "SET_PROPERTY" // Установить свойство объекта
 
-	PRINT = "PRINT" // Вывод значения
-	SUPER = "SUPER" // Обращение к суперклассу
-	THIS  = "THIS"  // Ссылка на текущий объект
-	FUNC  = "FUNC"  // Объявление функции
+	PRINT    = "PRINT" // Вывод значения
+	SUPER    = "SUPER" // Обращение к суперклассу
+	THIS     = "THIS"  // Ссылка на текущий объект
+	FUNC     = "FUNC"  // Объявление функции
+	END_FUNC = "END_FUNC"
 
 	LABEL            = "label"        // Метка для перехода
 	FALSE_LABEL      = "false_label_" // Метка для перехода при false
@@ -126,10 +128,12 @@ func (cg *CodeGenerator) GenerateExpression(expr ast.Expression) {
 func (cg *CodeGenerator) GenerateLiteral(lit *ast.Literal) {
 	var value string
 	switch lit.Token {
-	case token.Number, token.String:
+	case token.Number:
+		value = lit.Value
+	case token.String:
 		value = lit.Value
 	case token.Nil:
-		value = "null"
+		value = NULL
 	case token.True:
 		value = "true"
 	case token.False:
@@ -181,6 +185,7 @@ func (cg *CodeGenerator) GenerateCallExpr(call *ast.CallExpr) {
 		cg.GenerateExpression(arg)
 	}
 
+	cg.emit(PUSH_CONST, strconv.Itoa(len(call.Arguments)))
 	cg.emit(CALL_FUNCTION, call.Callee.String())
 }
 
@@ -241,9 +246,15 @@ func (cg *CodeGenerator) GenerateWhileStmt(whileStmt *ast.WhileStmt) {
 func (cg *CodeGenerator) GenerateFunctionStmt(funcStmt *ast.FunctionStmt) {
 	cg.emit(FUNC, funcStmt.Name)
 
+	for _, arg := range funcStmt.Params {
+		cg.emit(STORE_VAR, arg.Name)
+	}
+
 	for _, stmt := range funcStmt.Body {
 		cg.GenerateStatement(stmt)
 	}
+
+	cg.emit(END_FUNC, funcStmt.Name)
 }
 
 func (cg *CodeGenerator) GeneratePrintStmt(printStmt *ast.PrintStmt) {
@@ -278,13 +289,13 @@ func (cg *CodeGenerator) GenerateStatement(stmt ast.Statement) {
 }
 
 func (cg *CodeGenerator) GenerateBlockStmt(stmt *ast.BlockStmt) {
-	cg.emit(SCOPE_START, "")
+	/*	cg.emit(SCOPE_START, "")*/
 
 	for _, statement := range stmt.Statements {
 		cg.GenerateStatement(statement)
 	}
-
-	cg.emit(SCOPE_END, "")
+	/*
+		cg.emit(SCOPE_END, "")*/
 }
 
 func (cg *CodeGenerator) GenerateReturnStmt(stmt *ast.ReturnStmt) {
