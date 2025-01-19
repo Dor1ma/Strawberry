@@ -44,7 +44,7 @@ const (
 	FUNC  = "FUNC"  // Объявление функции
 
 	LABEL            = "label"        // Метка для перехода
-	FALSE_LABEL      = "false_label_" // Метка для перехода при falsr
+	FALSE_LABEL      = "false_label_" // Метка для перехода при false
 	LOOP_START_LABEL = "loop_start_"  // Метка старта цикла
 	LOOP_END_LABEL   = "loop_end_"    // Метка конца цикла
 	END_LABEL        = "end_label_"   // Метка конца
@@ -78,6 +78,16 @@ func (cg *CodeGenerator) PrintBytecode() {
 	for _, bc := range cg.Bytecodes {
 		fmt.Printf("%s %s\n", bc.Opcode, bc.Arg)
 	}
+}
+
+func (cg *CodeGenerator) GetBytecodes() []string {
+	var result []string
+
+	for _, bc := range cg.Bytecodes {
+		result = append(result, fmt.Sprintf("%s %s\n", bc.Opcode, bc.Arg))
+	}
+
+	return result
 }
 
 func (cg *CodeGenerator) GenerateExpression(expr ast.Expression) {
