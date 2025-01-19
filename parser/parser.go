@@ -9,7 +9,6 @@ import (
 	"strings"
 )
 
-// Parser represents the lox parser.
 type Parser struct {
 	l *lexer.Lexer
 
@@ -30,8 +29,8 @@ func (p *Parser) nextToken() token.Token {
 	return tok
 }
 
-// Parse returns all statements of input.
-func (p *Parser) Parse() (statements []ast.Stmt, err error) {
+// Parse возвращает все операторы
+func (p *Parser) Parse() (statements []ast.Statement, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if parseErr, ok := r.(parseError); ok {
@@ -43,6 +42,7 @@ func (p *Parser) Parse() (statements []ast.Stmt, err error) {
 			}
 		}
 	}()
+	// Здесь происходит парсинг всей программы
 	for !p.isAtEnd() {
 		stmt := p.parseDeclaration()
 		statements = append(statements, stmt)
@@ -50,12 +50,12 @@ func (p *Parser) Parse() (statements []ast.Stmt, err error) {
 	return statements, nil
 }
 
-func (p *Parser) parseDeclaration() ast.Stmt {
+func (p *Parser) parseDeclaration() ast.Statement {
 	if p.match(token.Var) {
 		return p.parseVarDeclaration()
 	}
 	if p.match(token.Fun) {
-		return p.parseFunDeclaration()
+		return p.parseFunctionDeclaration()
 	}
 	if p.match(token.Class) {
 		return p.parseClassDeclaration()
@@ -67,11 +67,11 @@ func (p *Parser) parseVarDeclaration() *ast.VarStmt {
 	name := p.lit
 	p.expect(token.Identifier, "Expect variable name.")
 	var stmt = &ast.VarStmt{
-		Name: &ast.Ident{
+		Name: &ast.Identifier{
 			Name: name,
 		},
 	}
-	var initializer ast.Expr
+	var initializer ast.Expression
 	if p.match(token.Equal) {
 		initializer = p.parseExpression()
 	}
@@ -80,14 +80,14 @@ func (p *Parser) parseVarDeclaration() *ast.VarStmt {
 	return stmt
 }
 
-func (p *Parser) parseFunDeclaration() *ast.FunctionStmt {
+func (p *Parser) parseFunctionDeclaration() *ast.FunctionStmt {
 	name := p.lit
 	p.expect(token.Identifier, "Expect function name.")
 	p.expect(token.LeftParen, "Expect '(' after function name.")
 	fun := &ast.FunctionStmt{
 		Name:   name,
-		Params: make([]*ast.Ident, 0),
-		Body:   make([]ast.Stmt, 0),
+		Params: make([]*ast.Identifier, 0),
+		Body:   make([]ast.Statement, 0),
 	}
 	if !p.match(token.RightParen) {
 		for {
@@ -96,13 +96,12 @@ func (p *Parser) parseFunDeclaration() *ast.FunctionStmt {
 			if len(fun.Params) >= 255 {
 				p.error("Cannot have more than 255 parameters.")
 			}
-			ident := &ast.Ident{Name: lit}
+			ident := &ast.Identifier{Name: lit}
 			fun.Params = append(fun.Params, ident)
 			if !p.match(token.Comma) {
 				break
 			}
 		}
-		// return fun
 		p.expect(token.RightParen, "Expect ')' after parameters.")
 	}
 	p.expect(token.LeftBrace, "Expect '{' before function body.")
@@ -117,7 +116,7 @@ func (p *Parser) parseClassDeclaration() *ast.ClassStmt {
 
 	methods := make([]*ast.FunctionStmt, 0)
 	for p.check(token.Identifier) {
-		method := p.parseFunDeclaration()
+		method := p.parseFunctionDeclaration()
 		method.IsInitializer = method.Name == "init"
 		methods = append(methods, method)
 	}
@@ -130,7 +129,7 @@ func (p *Parser) parseClassDeclaration() *ast.ClassStmt {
 	}
 }
 
-func (p *Parser) parseStatement() ast.Stmt {
+func (p *Parser) parseStatement() ast.Statement {
 	if p.match(token.Print) {
 		return p.parsePrintStatement()
 	}
@@ -152,7 +151,7 @@ func (p *Parser) parseStatement() ast.Stmt {
 	return p.parseExprStatement()
 }
 
-func (p *Parser) parsePrintStatement() ast.Stmt {
+func (p *Parser) parsePrintStatement() ast.Statement {
 	expr := p.parseExpression()
 	p.expect(token.Semicolon, "Expect ';' after value.")
 	return &ast.PrintStmt{
@@ -160,12 +159,12 @@ func (p *Parser) parsePrintStatement() ast.Stmt {
 	}
 }
 
-func (p *Parser) parseIfStatement() ast.Stmt {
+func (p *Parser) parseIfStatement() ast.Statement {
 	p.expect(token.LeftParen, "Expect '(' after 'if'.")
 	condition := p.parseExpression()
 	p.expect(token.RightParen, "Expect ')' after if condition.")
 	thenBranch := p.parseStatement()
-	var elseBranch ast.Stmt
+	var elseBranch ast.Statement
 	if p.match(token.Else) {
 		elseBranch = p.parseStatement()
 	}
@@ -176,7 +175,7 @@ func (p *Parser) parseIfStatement() ast.Stmt {
 	}
 }
 
-func (p *Parser) parseWhileStatement() ast.Stmt {
+func (p *Parser) parseWhileStatement() ast.Statement {
 	p.expect(token.LeftParen, "Expect '(' after 'while'.")
 	condition := p.parseExpression()
 	p.expect(token.RightParen, "Expect ')' after while condition.")
@@ -187,9 +186,9 @@ func (p *Parser) parseWhileStatement() ast.Stmt {
 	}
 }
 
-func (p *Parser) parseForStatement() ast.Stmt {
+func (p *Parser) parseForStatement() ast.Statement {
 	p.expect(token.LeftParen, "Expect '(' after 'for'.")
-	var initializer ast.Stmt
+	var initializer ast.Statement
 	if !p.match(token.Semicolon) {
 		if p.match(token.Var) {
 			initializer = p.parseVarDeclaration()
@@ -198,13 +197,13 @@ func (p *Parser) parseForStatement() ast.Stmt {
 		}
 	}
 
-	var condition ast.Expr
+	var condition ast.Expression
 	if !p.match(token.Semicolon) {
 		condition = p.parseExpression()
 		p.expect(token.Semicolon, "Expect ';' after loop condition.")
 	}
 
-	var increment ast.Expr
+	var increment ast.Expression
 	if !p.match(token.RightParen) {
 		increment = p.parseExpression()
 		p.expect(token.RightParen, "Expect ')' after for clause.")
@@ -214,7 +213,7 @@ func (p *Parser) parseForStatement() ast.Stmt {
 
 	if increment != nil {
 		body = &ast.BlockStmt{
-			Statements: []ast.Stmt{
+			Statements: []ast.Statement{
 				body,
 				&ast.ExprStmt{
 					Expression: increment,
@@ -235,7 +234,7 @@ func (p *Parser) parseForStatement() ast.Stmt {
 
 	if initializer != nil {
 		body = &ast.BlockStmt{
-			Statements: []ast.Stmt{
+			Statements: []ast.Statement{
 				initializer,
 				body,
 			},
@@ -245,7 +244,7 @@ func (p *Parser) parseForStatement() ast.Stmt {
 }
 
 func (p *Parser) parseBlockStatement() *ast.BlockStmt {
-	statements := make([]ast.Stmt, 0)
+	statements := make([]ast.Statement, 0)
 	for !(p.check(token.RightBrace) || p.isAtEnd()) {
 		statements = append(statements, p.parseDeclaration())
 	}
@@ -255,7 +254,7 @@ func (p *Parser) parseBlockStatement() *ast.BlockStmt {
 	}
 }
 
-func (p *Parser) parseExprStatement() ast.Stmt {
+func (p *Parser) parseExprStatement() ast.Statement {
 	expr := p.parseExpression()
 	p.expect(token.Semicolon, "Expect ';' after expression.")
 	return &ast.ExprStmt{
@@ -263,7 +262,7 @@ func (p *Parser) parseExprStatement() ast.Stmt {
 	}
 }
 
-func (p *Parser) parseReturnStatement() ast.Stmt {
+func (p *Parser) parseReturnStatement() ast.Statement {
 	stmt := &ast.ReturnStmt{}
 	if !p.match(token.Semicolon) {
 		stmt.Value = p.parseExpression()
@@ -272,19 +271,19 @@ func (p *Parser) parseReturnStatement() ast.Stmt {
 	return stmt
 }
 
-func (p *Parser) parseExpression() ast.Expr {
+func (p *Parser) parseExpression() ast.Expression {
 	return p.parseAssignment()
 }
 
-func (p *Parser) parseAssignment() ast.Expr {
+func (p *Parser) parseAssignment() ast.Expression {
 	expr := p.parseOr()
 	if p.match(token.Equal) {
-		// recursive call.
+		// ToDo: подумать над рекурсией здесь..
 		v := p.parseAssignment()
 		switch e := expr.(type) {
 		default:
 			p.error("Invalid assignment target.")
-		case *ast.VariableExpr:
+		case ast.LeftExpr:
 			return &ast.AssignExpr{
 				Left:  e,
 				Value: v,
@@ -300,7 +299,7 @@ func (p *Parser) parseAssignment() ast.Expr {
 	return expr
 }
 
-func (p *Parser) parseOr() ast.Expr {
+func (p *Parser) parseOr() ast.Expression {
 	expr := p.parseAnd()
 	if p.match(token.Or) {
 		right := p.parseAnd()
@@ -313,7 +312,7 @@ func (p *Parser) parseOr() ast.Expr {
 	return expr
 }
 
-func (p *Parser) parseAnd() ast.Expr {
+func (p *Parser) parseAnd() ast.Expression {
 	expr := p.parseEquality()
 	if p.match(token.And) {
 		right := p.parseEquality()
@@ -326,10 +325,10 @@ func (p *Parser) parseAnd() ast.Expr {
 	return expr
 }
 
-func (p *Parser) parseEquality() ast.Expr {
+func (p *Parser) parseEquality() ast.Expression {
 	expr := p.parseComparison()
 	operator := p.tok
-	for p.match(token.EqualEqual, token.BangEqual) {
+	for p.match(token.EqualEqual, token.NotEqual) {
 		right := p.parseComparison()
 		expr = &ast.BinaryExpr{
 			Left:     expr,
@@ -341,10 +340,10 @@ func (p *Parser) parseEquality() ast.Expr {
 	return expr
 }
 
-func (p *Parser) parseComparison() ast.Expr {
+func (p *Parser) parseComparison() ast.Expression {
 	expr := p.parseAddition()
 	operator := p.tok
-	for p.match(token.Greater, token.GreaterEqual, token.Less, token.LessEqual) {
+	for p.match(token.Greater, token.GreaterThanOrEqual, token.Less, token.LessThanOrEqual) {
 		right := p.parseAddition()
 		expr = &ast.BinaryExpr{
 			Left:     expr,
@@ -356,7 +355,7 @@ func (p *Parser) parseComparison() ast.Expr {
 	return expr
 }
 
-func (p *Parser) parseAddition() ast.Expr {
+func (p *Parser) parseAddition() ast.Expression {
 	expr := p.parseMultiplacation()
 	operator := p.tok
 	for p.match(token.Plus, token.Minus) {
@@ -371,7 +370,7 @@ func (p *Parser) parseAddition() ast.Expr {
 	return expr
 }
 
-func (p *Parser) parseMultiplacation() ast.Expr {
+func (p *Parser) parseMultiplacation() ast.Expression {
 	expr := p.parseUnary()
 	operator := p.tok
 	for p.match(token.Slash, token.Star) {
@@ -386,9 +385,9 @@ func (p *Parser) parseMultiplacation() ast.Expr {
 	return expr
 }
 
-func (p *Parser) parseUnary() ast.Expr {
+func (p *Parser) parseUnary() ast.Expression {
 	operator := p.tok
-	if p.match(token.Bang, token.Minus) {
+	if p.match(token.Not, token.Minus) {
 		right := p.parseUnary()
 		return &ast.UnaryExpr{
 			Operator: operator,
@@ -398,17 +397,22 @@ func (p *Parser) parseUnary() ast.Expr {
 	return p.parseCall()
 }
 
-func (p *Parser) parseCall() ast.Expr {
+func (p *Parser) parseCall() ast.Expression {
 	expr := p.parsePrimary()
-
-	// fn()()
 	for {
 		if p.match(token.LeftParen) {
 			expr = p.finishCall(expr)
 		} else if p.match(token.Dot) {
 			name := p.lit
-			p.expect(token.Identifier, "Expect property name after '.'.")
+			p.expect(token.Identifier, "Expect property or method name after '.'.")
 			expr = &ast.GetExpr{Object: expr, Name: name}
+		} else if p.match(token.LeftBracket) {
+			index := p.parseExpression()
+			p.expect(token.RightBracket, "Expect ']' after array index.")
+			expr = &ast.ArrayIndex{
+				Array: expr,
+				Index: index,
+			}
 		} else {
 			break
 		}
@@ -416,16 +420,39 @@ func (p *Parser) parseCall() ast.Expr {
 	return expr
 }
 
-func (p *Parser) finishCall(expr ast.Expr) ast.Expr {
+func (p *Parser) parseArrayExpr() *ast.ArrayExpr {
+	var elements []ast.Expression
+
+	if p.match(token.RightBracket) {
+		return &ast.ArrayExpr{Elements: elements}
+	}
+
+	for {
+		element := p.parseExpression()
+		elements = append(elements, element)
+
+		if p.match(token.Comma) {
+			continue
+		}
+
+		p.expect(token.RightBracket, "Expect ']' after array elements.")
+		break
+	}
+
+	return &ast.ArrayExpr{Elements: elements}
+}
+
+func (p *Parser) finishCall(expr ast.Expression) ast.Expression {
 	call := &ast.CallExpr{
 		Callee:    expr,
-		Arguments: make([]ast.Expr, 0),
+		Arguments: make([]ast.Expression, 0),
 	}
 	if p.match(token.RightParen) {
 		return call
 	}
 	for {
 		arg := p.parseExpression()
+		// ToDo: ?
 		if len(call.Arguments) >= 255 {
 			p.error("Cannot have more than 255 arguments.")
 		}
@@ -438,7 +465,7 @@ func (p *Parser) finishCall(expr ast.Expr) ast.Expr {
 	return call
 }
 
-func (p *Parser) parsePrimary() (expr ast.Expr) {
+func (p *Parser) parsePrimary() (expr ast.Expression) {
 	tok, lit := p.tok, p.lit
 	switch tok {
 	default:
@@ -463,6 +490,10 @@ func (p *Parser) parsePrimary() (expr ast.Expr) {
 			Expression: inner,
 		}
 		return
+
+	case token.LeftBracket:
+		p.nextToken()
+		return p.parseArrayExpr()
 	}
 	p.nextToken()
 	return expr
@@ -516,7 +547,7 @@ func (p *Parser) isAtEnd() bool {
 	return p.tok == token.EOF
 }
 
-// New returns a parser instance.
+// конструктор
 func New(l *lexer.Lexer) *Parser {
 	parser := &Parser{
 		l: l,

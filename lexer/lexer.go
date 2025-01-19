@@ -14,32 +14,32 @@ import (
 var eof = rune(-1)
 
 var (
-	// identifer error
+	// ошибки для идентификатора
 	errUnterminated = errors.New("unterminated string")
 	errEspace       = errors.New("invalid escape char")
 	errInvalidChar  = errors.New("invalid unicode char")
 
-	// number error
+	// ошибки для чисел
 	errLessPower = errors.New("power is required")
 )
 
-// Lexer represents a lexical scanner for Lox programing language.
+// Lexer - делает лексический анализ текста и разбивает его на токены
 type Lexer struct {
-	s      *scanner.Scanner
-	ch     rune
-	tokBuf *strings.Builder
+	s        *scanner.Scanner
+	char     rune
+	tokenBuf *strings.Builder
 }
 
 func (l *Lexer) consume() {
 	if l.isAtEnd() {
 		return
 	}
-	ch := l.s.Next()
-	if ch == scanner.EOF {
-		l.ch = eof
+	char := l.s.Next()
+	if char == scanner.EOF {
+		l.char = eof
 		return
 	}
-	l.ch = ch
+	l.char = char
 }
 
 func (l *Lexer) peek() rune {
@@ -48,18 +48,18 @@ func (l *Lexer) peek() rune {
 }
 
 func (l *Lexer) skip() {
-	for unicode.IsSpace(l.ch) {
+	for unicode.IsSpace(l.char) {
 		l.consume()
 	}
 }
 
 func (l *Lexer) isAtEnd() bool {
-	return l.ch == eof
+	return l.char == eof
 }
 
 func (l *Lexer) match(ch rune) bool {
 	l.consume()
-	if l.isAtEnd() || l.ch != ch {
+	if l.isAtEnd() || l.char != ch {
 		return false
 	}
 	l.consume()
@@ -67,32 +67,32 @@ func (l *Lexer) match(ch rune) bool {
 }
 
 func (l *Lexer) error(msg string) {
-	// FIXME: position is wrong
+	// ToDo: исправить баг с позицией
 	fmt.Fprintf(os.Stderr, "%s %s\n", l.Pos().String(), msg)
 }
 
 func (l *Lexer) readIdentifier() string {
-	l.tokBuf.Reset()
-	for isAlphaNumeric(l.ch) {
-		l.tokBuf.WriteRune(l.ch)
+	l.tokenBuf.Reset()
+	for isAlphaNumeric(l.char) {
+		l.tokenBuf.WriteRune(l.char)
 		l.consume()
 	}
-	return l.tokBuf.String()
+	return l.tokenBuf.String()
 }
 
 func (l *Lexer) readString() (string, error) {
-	l.tokBuf.Reset()
+	l.tokenBuf.Reset()
 	l.consume()
-	if l.ch == '"' {
+	if l.char == '"' {
 		l.consume()
 		return "", nil
 	}
 
-	for l.ch != '"' {
+	for l.char != '"' {
 		if l.isAtEnd() {
 			l.error(errUnterminated.Error())
 			return "", errUnterminated
-		} else if l.ch == '\\' {
+		} else if l.char == '\\' {
 			peekCh := l.peek()
 			if peekCh == eof {
 				l.error(errEspace.Error())
@@ -101,60 +101,60 @@ func (l *Lexer) readString() (string, error) {
 			l.consume()
 			switch peekCh {
 			case '"':
-				l.tokBuf.WriteRune('"')
+				l.tokenBuf.WriteRune('"')
 			case 'u':
 				code := make([]rune, 4)
 				for i := range code {
 					l.consume()
-					if !unicode.Is(unicode.Hex_Digit, l.ch) {
+					if !unicode.Is(unicode.Hex_Digit, l.char) {
 						l.error(errInvalidChar.Error())
 						return "", errInvalidChar
 					}
-					code[i] = l.ch
+					code[i] = l.char
 				}
-				l.tokBuf.WriteRune(charCode2Rune(string(code)))
+				l.tokenBuf.WriteRune(charCode2Rune(string(code)))
 			}
 		} else {
-			l.tokBuf.WriteRune(l.ch)
+			l.tokenBuf.WriteRune(l.char)
 		}
 		l.consume()
 	}
 	// end ".
 	l.consume()
-	return l.tokBuf.String(), nil
+	return l.tokenBuf.String(), nil
 }
 
 func (l *Lexer) readNumber() (string, error) {
 
-	l.tokBuf.Reset()
-	for unicode.IsNumber(l.ch) {
-		l.tokBuf.WriteRune(l.ch)
+	l.tokenBuf.Reset()
+	for unicode.IsNumber(l.char) {
+		l.tokenBuf.WriteRune(l.char)
 		l.consume()
 	}
 
-	if l.ch == '.' {
+	if l.char == '.' {
 		if !unicode.IsNumber(l.peek()) {
-			return l.tokBuf.String(), nil
+			return l.tokenBuf.String(), nil
 		}
-		l.tokBuf.WriteRune(l.ch)
+		l.tokenBuf.WriteRune(l.char)
 		l.consume()
-		for unicode.IsNumber(l.ch) {
-			l.tokBuf.WriteRune(l.ch)
+		for unicode.IsNumber(l.char) {
+			l.tokenBuf.WriteRune(l.char)
 			l.consume()
 		}
 	}
 
-	if l.ch == 'E' || l.ch == 'e' {
+	if l.char == 'E' || l.char == 'e' {
 		seenPower := false
-		l.tokBuf.WriteRune(l.ch)
+		l.tokenBuf.WriteRune(l.char)
 		l.consume()
-		if l.ch == '+' || l.ch == '-' {
-			l.tokBuf.WriteRune(l.ch)
+		if l.char == '+' || l.char == '-' {
+			l.tokenBuf.WriteRune(l.char)
 			l.consume()
 		}
-		for unicode.IsNumber(l.ch) {
+		for unicode.IsNumber(l.char) {
 			seenPower = true
-			l.tokBuf.WriteRune(l.ch)
+			l.tokenBuf.WriteRune(l.char)
 			l.consume()
 		}
 		if !seenPower {
@@ -163,22 +163,26 @@ func (l *Lexer) readNumber() (string, error) {
 		}
 	}
 
-	return l.tokBuf.String(), nil
+	return l.tokenBuf.String(), nil
 }
 
-// NextToken reads and returns token and literal.
-// It returns token.Illegal for invalid string or number.
-// It return token.EOF at the end of input string.
+// NextToken читает и возвращает токены или литералы
 func (l *Lexer) NextToken() (tok token.Token, literal string) {
 	l.skip()
 
-	switch l.ch {
+	switch l.char {
 	case '(':
 		tok = token.LeftParen
 		literal = "("
 	case ')':
 		tok = token.RightParen
 		literal = ")"
+	case '[':
+		tok = token.LeftBracket
+		literal = "["
+	case ']':
+		tok = token.RightBracket
+		literal = "]"
 	case '{':
 		tok = token.LeftBrace
 		literal = "{"
@@ -208,10 +212,10 @@ func (l *Lexer) NextToken() (tok token.Token, literal string) {
 		literal = "*"
 	case '!':
 		if l.match('=') {
-			tok = token.BangEqual
+			tok = token.NotEqual
 			literal = "!="
 		} else {
-			tok = token.Bang
+			tok = token.Not
 			literal = "!"
 		}
 		return
@@ -226,7 +230,7 @@ func (l *Lexer) NextToken() (tok token.Token, literal string) {
 		return
 	case '>':
 		if l.match('=') {
-			tok = token.GreaterEqual
+			tok = token.GreaterThanOrEqual
 			literal = ">="
 		} else {
 			tok = token.Greater
@@ -235,7 +239,7 @@ func (l *Lexer) NextToken() (tok token.Token, literal string) {
 		return
 	case '<':
 		if l.match('=') {
-			tok = token.LessEqual
+			tok = token.LessThanOrEqual
 			literal = "<="
 		} else {
 			tok = token.Less
@@ -254,11 +258,11 @@ func (l *Lexer) NextToken() (tok token.Token, literal string) {
 		tok = token.EOF
 		return
 	default:
-		if unicode.IsLetter(l.ch) {
+		if unicode.IsLetter(l.char) {
 			literal = l.readIdentifier()
 			tok = token.Lookup(literal)
 			return
-		} else if unicode.IsNumber(l.ch) {
+		} else if unicode.IsNumber(l.char) {
 			liter, err := l.readNumber()
 			if err != nil {
 				return token.Illegal, ""
@@ -276,7 +280,6 @@ func (l *Lexer) NextToken() (tok token.Token, literal string) {
 	return
 }
 
-// Pos returns current position of lexer.
 func (l *Lexer) Pos() scanner.Position {
 	return l.s.Pos()
 }
@@ -291,13 +294,13 @@ func charCode2Rune(code string) rune {
 
 func isAlphaNumeric(ch rune) bool { return unicode.IsLetter(ch) || unicode.IsNumber(ch) || ch == '_' }
 
-// New return an instance of Lexer.
+// конструктор
 func New(input string) *Lexer {
 	s := &scanner.Scanner{}
 	s.Init(strings.NewReader(input))
 	l := &Lexer{
-		s:      s,
-		tokBuf: &strings.Builder{},
+		s:        s,
+		tokenBuf: &strings.Builder{},
 	}
 	l.consume()
 	return l

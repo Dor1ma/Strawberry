@@ -6,26 +6,36 @@ import (
 	"strings"
 )
 
-// Node represents a node in Lox.
-// All node types should implement the Node interface.
+// Node Нода ! все остальные ноды, должны реализовывать этот интефрейс
 type Node interface {
 	node()
 	String() string
 }
 
-// Expr represents an expression that can be evaluated to a value.
-type Expr interface {
+// Expression Выражение
+type Expression interface {
 	Node
 	expr()
 }
 
-// Stmt represent a statement in Lox.
-type Stmt interface {
+// Statement Оператор
+type Statement interface {
 	Node
 	stmt()
 }
 
-func (*Ident) node() {}
+// LeftExpr левое выражение для присваивания
+type LeftExpr interface {
+	Expression
+	leftExpr()
+}
+
+type DotExpr interface {
+	Expression
+	dotExpr()
+}
+
+func (*Identifier) node() {}
 
 func (*Literal) node() {}
 
@@ -41,6 +51,9 @@ func (*ThisExpr) node()     {}
 func (*UnaryExpr) node()    {}
 func (*VariableExpr) node() {}
 
+func (*ArrayExpr) node()  {}
+func (*ArrayIndex) node() {}
+
 func (*BlockStmt) node()    {}
 func (*ClassStmt) node()    {}
 func (*ExprStmt) node()     {}
@@ -51,12 +64,11 @@ func (*ReturnStmt) node()   {}
 func (*VarStmt) node()      {}
 func (*WhileStmt) node()    {}
 
-// Ident represents an identifier.
-type Ident struct {
+type Identifier struct {
 	Name string
 }
 
-func (ident *Ident) String() string { return ident.Name }
+func (ident *Identifier) String() string { return ident.Name }
 
 type Literal struct {
 	Token token.Token
@@ -81,48 +93,67 @@ func (lit *Literal) String() string {
 
 type (
 	AssignExpr struct {
-		Left  *VariableExpr
-		Value Expr
+		Left  LeftExpr
+		Value Expression
 	}
 	BinaryExpr struct {
-		Left     Expr
+		Left     Expression
 		Operator token.Token
-		Right    Expr
+		Right    Expression
 	}
 	CallExpr struct {
-		Callee    Expr
-		Arguments []Expr
+		Callee    Expression
+		Arguments []Expression
 	}
+
+	// ----
+
+	ArrayExpr struct {
+		Elements []Expression
+	}
+
+	ArrayIndex struct {
+		Array Expression
+		Index Expression
+	}
+
+	ArrayAppendExpr struct {
+		Array ArrayExpr
+		Value Expression
+	}
+
+	// ----
+
 	GetExpr struct {
-		Object Expr
+		Object Expression
 		Name   string
 	}
 	GroupingExpr struct {
-		Expression Expr
+		Expression Expression
 	}
 	LogicalExpr struct {
-		Left     Expr
+		Left     Expression
 		Operator token.Token
-		Right    Expr
+		Right    Expression
 	}
 	SetExpr struct {
-		Object Expr
+		Object Expression
 		Name   string
-		Value  Expr
+		Value  Expression
 	}
 	SuperExpr struct {
-		// Method  Ident
+		// Method  Identifier
 		Keyword token.Token
 		Method  token.Token
 	}
 	ThisExpr  struct{}
 	UnaryExpr struct {
 		Operator token.Token
-		Right    Expr
+		Right    Expression
 	}
 	VariableExpr struct {
 		Name     string
-		Distance int // -1 represents global variable.
+		Distance int // NOTE!! -1 используем, когда переменная ГЛОБАЛЬНАЯ
 	}
 )
 
@@ -138,6 +169,13 @@ func (*ThisExpr) expr()     {}
 func (*UnaryExpr) expr()    {}
 func (*VariableExpr) expr() {}
 
+func (*ArrayExpr) expr()       {}
+func (*ArrayIndex) expr()      {}
+func (*ArrayAppendExpr) expr() {}
+
+func (*GetExpr) dotExpr()         {}
+func (*ArrayAppendExpr) dotExpr() {}
+
 func (e *AssignExpr) String() string {
 	return fmt.Sprintf("%s = %s", e.Left, e.Value)
 }
@@ -152,6 +190,18 @@ func (e *CallExpr) String() string {
 		args[i] = arg.String()
 	}
 	return fmt.Sprintf("%s(%s)", e.Callee, strings.Join(args, ", "))
+}
+
+func (e *ArrayExpr) String() string {
+	var elements []string
+	for _, el := range e.Elements {
+		elements = append(elements, el.String())
+	}
+	return "[" + strings.Join(elements, ", ") + "]"
+}
+
+func (e *ArrayIndex) String() string {
+	return fmt.Sprintf("%s[%s]", e.Array.String(), e.Index.String())
 }
 
 func (e *GetExpr) String() string {
@@ -188,7 +238,7 @@ func (e *VariableExpr) String() string {
 
 type (
 	BlockStmt struct {
-		Statements []Stmt
+		Statements []Statement
 	}
 	ClassStmt struct {
 		Name       string
@@ -196,33 +246,33 @@ type (
 		Methods    []*FunctionStmt
 	}
 	ExprStmt struct {
-		Expression Expr
+		Expression Expression
 	}
 	FunctionStmt struct {
 		Name          string
-		Params        []*Ident
-		Body          []Stmt
+		Params        []*Identifier
+		Body          []Statement
 		IsInitializer bool
 	}
 	IfStmt struct {
-		Condition  Expr
-		ThenBranch Stmt
-		ElseBranch Stmt
+		Condition  Expression
+		ThenBranch Statement
+		ElseBranch Statement
 	}
 	PrintStmt struct {
-		Expression Expr
+		Expression Expression
 	}
 	ReturnStmt struct {
 		Keyword token.Token
-		Value   Expr
+		Value   Expression
 	}
 	VarStmt struct {
-		Name        *Ident
-		Initializer Expr
+		Name        *Identifier
+		Initializer Expression
 	}
 	WhileStmt struct {
-		Condition Expr
-		Body      Stmt
+		Condition Expression
+		Body      Statement
 	}
 )
 
@@ -319,3 +369,12 @@ func (s *WhileStmt) String() string {
 	sb.WriteString(s.Body.String())
 	return sb.String()
 }
+
+// PrettyPrint - печатает AST с отступами для лучшего восприятия.
+func PrettyPrint(node Statement, indentLevel int) string {
+	indent := strings.Repeat("  ", indentLevel)
+	return fmt.Sprintf("%s%s", indent, node.String())
+}
+
+func (e *VariableExpr) leftExpr() {}
+func (e *ArrayIndex) leftExpr()   {}

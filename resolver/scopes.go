@@ -6,7 +6,6 @@ import (
 	"github.com/Dor1ma/Strawberry/token"
 )
 
-// Scopes represents variable scopes.
 type Scopes []map[string]bool
 
 func (s *Scopes) check(name string) (exist bool, init bool) {
@@ -65,7 +64,7 @@ func (s Scopes) define(name string) {
 	scope[name] = true
 }
 
-// NewScopes returns Scopes instance.
+// Инициализатор
 func NewScopes() Scopes {
 	scopes := make([]map[string]bool, 0)
 	return scopes

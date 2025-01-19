@@ -5,10 +5,9 @@ import (
 	"github.com/Dor1ma/Strawberry/lexer"
 )
 
-// helper functions for testing.
+// вспомогательные функции
 
-// ParseExpr parses expression.
-func ParseExpr(input string) (expr ast.Expr, err error) {
+func ParseExpr(input string) (expr ast.Expression, err error) {
 	l := lexer.New(input)
 	p := New(l)
 	defer func() {
@@ -24,8 +23,7 @@ func ParseExpr(input string) (expr ast.Expr, err error) {
 	return p.parseExpression(), nil
 }
 
-// ParseStmts parses statements.
-func ParseStmts(input string) ([]ast.Stmt, error) {
+func ParseStmts(input string) ([]ast.Statement, error) {
 	l := lexer.New(input)
 	p := New(l)
 	return p.Parse()

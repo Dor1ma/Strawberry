@@ -1,6 +1,5 @@
 package parser
 
-// parseError implements error interface.
 type parseError struct {
 	s string
 }

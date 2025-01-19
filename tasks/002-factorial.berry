@@ -1,0 +1,11 @@
+fun a(n) {
+    if (n == 0 or n == 1) {
+        return 1;
+    }
+    else {
+        return n * a(n - 1);
+    }
+}
+
+var b = 20;
+print a(b);

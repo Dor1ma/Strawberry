@@ -1,27 +1,30 @@
 package valuer
 
 import (
+	"fmt"
 	"github.com/Dor1ma/Strawberry/ast"
 	"strconv"
+	"strings"
 )
 
 var typeMap = map[Type]string{
 	NumberType:   "number",
 	StringType:   "string",
 	BooleanType:  "bool",
+	ArrayType:    "array",
 	NilType:      "nil",
 	FunctionType: "function",
 	ReturnType:   "return",
 	ClassType:    "class",
 }
 
-// Type represents type of Valuer.
 type Type int
 
 const (
 	NumberType   Type = iota + 1 // number
 	StringType                   // string
 	BooleanType                  // bool
+	ArrayType                    // array
 	NilType                      // nil
 	FunctionType                 // function
 	ReturnType                   // return
@@ -50,7 +53,6 @@ type Number struct {
 	Value float64
 }
 
-// Type returns its Type.
 func (*Number) Type() Type { return NumberType }
 
 func (num *Number) String() string {
@@ -61,7 +63,6 @@ type String struct {
 	Value string
 }
 
-// Type returns its Type.
 func (*String) Type() Type { return StringType }
 
 func (s *String) String() string { return s.Value }
@@ -70,7 +71,6 @@ type Boolean struct {
 	Value bool
 }
 
-// Type returns its Type.
 func (*Boolean) Type() Type { return BooleanType }
 
 func (b *Boolean) String() string { return strconv.FormatBool(b.Value) }
@@ -84,13 +84,12 @@ func (*Nil) String() string { return "nil" }
 
 type Function struct {
 	Name          string
-	Params        []*ast.Ident
-	Body          []ast.Stmt
+	Params        []*ast.Identifier
+	Body          []ast.Statement
 	Closure       *Environment
 	IsInitializer bool
 }
 
-// Type returns its Type.
 func (*Function) Type() Type { return FunctionType }
 
 func (*Function) call() {}
@@ -99,7 +98,7 @@ func (fn *Function) String() string {
 	return "<fn " + fn.Name + ">"
 }
 
-// Arity returns size of params.
+// что то типа "арность"
 func (fn *Function) Arity() int {
 	return len(fn.Params)
 }
@@ -119,16 +118,31 @@ type ReturnValue struct {
 	Value Valuer
 }
 
-// Type returns its Type.
 func (*ReturnValue) Type() Type { return ReturnType }
 
 func (rt *ReturnValue) String() string {
 	return rt.Value.String()
 }
 
+type Array struct {
+	Elements []Valuer
+}
+
+func (a *Array) Type() Type {
+	return ArrayType
+}
+
+func (a *Array) String() string {
+	var elements []string
+	for _, e := range a.Elements {
+		elements = append(elements, e.String())
+	}
+	return fmt.Sprintf("[%s]", strings.Join(elements, ", "))
+}
+
 type ClassValue struct {
 	Name    string
-	Mehtods map[string]*Function
+	Methods map[string]*Function
 }
 
 func (*ClassValue) Type() Type { return ClassType }
@@ -148,7 +162,7 @@ func (c *ClassValue) String() string {
 }
 
 func (c *ClassValue) FindMethod(key string) *Function {
-	if method, ok := c.Mehtods[key]; ok {
+	if method, ok := c.Methods[key]; ok {
 		return method
 	}
 	return nil
@@ -156,7 +170,7 @@ func (c *ClassValue) FindMethod(key string) *Function {
 
 type Instance struct {
 	Klass  *ClassValue
-	Fileds map[string]Valuer
+	Fields map[string]Valuer
 }
 
 func (*Instance) Type() Type { return ClassType }
@@ -166,7 +180,7 @@ func (i *Instance) String() string {
 }
 
 func (i *Instance) Get(key string) (Valuer, bool) {
-	if v, ok := i.Fileds[key]; ok {
+	if v, ok := i.Fields[key]; ok {
 		return v, ok
 	}
 	if method := i.Klass.FindMethod(key); method != nil {
@@ -176,8 +190,8 @@ func (i *Instance) Get(key string) (Valuer, bool) {
 }
 
 func (i *Instance) Set(key string, v Valuer) {
-	if i.Fileds == nil {
-		i.Fileds = make(map[string]Valuer)
+	if i.Fields == nil {
+		i.Fields = make(map[string]Valuer)
 	}
-	i.Fileds[key] = v
+	i.Fields[key] = v
 }

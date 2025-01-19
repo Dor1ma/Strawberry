@@ -1,5 +1,5 @@
 build:
-	go build -o lox.exe ./cmd/lox/main.go
+	go build -o strawberry.exe ./cmd/strawberry/main.go
 
 test:
 	go test ./...

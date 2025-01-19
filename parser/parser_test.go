@@ -240,7 +240,7 @@ func newParserFromInput(input string) *Parser {
 	return New(l)
 }
 
-func parseExpression(p *Parser) (expr ast.Expr, err error) {
+func parseExpression(p *Parser) (expr ast.Expression, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if parseErr, ok := r.(parseError); ok {
