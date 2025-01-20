@@ -78,9 +78,6 @@ func (virtualMachine *VirtualMachine) Run() {
 		virtualMachine.programCounter++
 
 		virtualMachine.execute(command)
-
-		/*fmt.Println(virtualMachine.StackStruct)*/
-		/*fmt.Println(virtualMachine.variables)*/
 	}
 }
 
@@ -446,7 +443,7 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 		pop := virtualMachine.stack.Pop()
 
 		if pop.ValueType == ARRAY {
-			fmt.Println(virtualMachine.heap[pop.Value.(string)])
+			fmt.Println(virtualMachine.heap[pop.Value.(string)].data)
 		} else {
 			fmt.Println(pop)
 		}
@@ -499,7 +496,7 @@ func (virtualMachine *VirtualMachine) prepareLabels() {
 	}
 }
 
-func (virtualMachine *VirtualMachine) cleanBytecode() {
+/*func (virtualMachine *VirtualMachine) cleanBytecode() {
 	newBytecode := []string{}
 	for _, command := range virtualMachine.bytecode {
 		if !strings.HasPrefix(command, bytecode_gen.LABEL) {
@@ -507,7 +504,7 @@ func (virtualMachine *VirtualMachine) cleanBytecode() {
 		}
 	}
 	virtualMachine.bytecode = newBytecode
-}
+}*/
 
 func (virtualMachine *VirtualMachine) PrintBytecode() {
 	fmt.Printf("\n\n")
