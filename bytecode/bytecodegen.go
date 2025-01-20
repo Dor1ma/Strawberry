@@ -301,7 +301,7 @@ func (cg *CodeGenerator) GenerateBlockStmt(stmt *ast.BlockStmt) {
 func (cg *CodeGenerator) GenerateReturnStmt(stmt *ast.ReturnStmt) {
 	if stmt.Value != nil {
 		cg.GenerateExpression(stmt.Value)
-		cg.emit(RETURN, stmt.Value.String())
+		cg.emit(RETURN, "")
 	} else {
 		cg.emit(PUSH_CONST, NULL)
 	}

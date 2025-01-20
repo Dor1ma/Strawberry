@@ -8,11 +8,10 @@ import (
 )
 
 const (
-	INT      = "int"
-	BOOL     = "bool"
-	STRING   = "string"
-	ARRAY    = "array"
-	FUNCTION = "function"
+	INT    = "int"
+	BOOL   = "bool"
+	STRING = "string"
+	ARRAY  = "array"
 )
 
 type ValueType string
@@ -20,9 +19,6 @@ type ValueType string
 type StackValue struct {
 	Value     interface{}
 	ValueType ValueType
-}
-
-type Function struct {
 }
 
 func (sv StackValue) String() string {
@@ -41,13 +37,15 @@ func (sv StackValue) String() string {
 }
 
 type VirtualMachine struct {
-	stack          []StackValue
-	bytecode       []string
-	programCounter int
-	variables      map[string]StackValue
-	labels         map[string]int
-	arrays         map[string][]StackValue
-	arrayCounter   int
+	stack           StackStruct
+	bytecode        []string
+	programCounter  int
+	variables       Variables
+	labels          map[string]int
+	arrays          map[string][]StackValue
+	arrayCounter    int
+	callStack       []StackStruct
+	returnAddresses StackStruct
 }
 
 func (vm *VirtualMachine) newArrayID() string {
@@ -57,13 +55,14 @@ func (vm *VirtualMachine) newArrayID() string {
 
 func NewVirtualMachine(bytecode []string) *VirtualMachine {
 	return &VirtualMachine{
-		stack:          make([]StackValue, 0),
-		bytecode:       bytecode,
-		programCounter: 0,
-		variables:      make(map[string]StackValue),
-		labels:         make(map[string]int),
-		arrayCounter:   0,
-		arrays:         make(map[string][]StackValue),
+		stack:           make(StackStruct, 0),
+		bytecode:        bytecode,
+		programCounter:  0,
+		variables:       *CreateVariables(),
+		labels:          make(map[string]int),
+		arrayCounter:    0,
+		arrays:          make(map[string][]StackValue),
+		returnAddresses: make(StackStruct, 0),
 	}
 }
 
@@ -78,7 +77,7 @@ func (virtualMachine *VirtualMachine) Run() {
 
 		virtualMachine.execute(command)
 
-		/*fmt.Println(virtualMachine.stack)*/
+		/*fmt.Println(virtualMachine.StackStruct)*/
 		/*fmt.Println(virtualMachine.variables)*/
 	}
 }
@@ -99,22 +98,19 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 
 	switch instruction {
 	case bytecode_gen.PUSH_CONST:
-		virtualMachine.stack = append(virtualMachine.stack, value)
+		virtualMachine.stack.Push(value)
 
 	case bytecode_gen.PUSH_VAR:
-		varValue, exists := virtualMachine.variables[nonParsedArgument]
-		if !exists {
-			panic(fmt.Sprintf("Variable %s not defined", nonParsedArgument))
-		}
-		virtualMachine.stack = append(virtualMachine.stack, varValue)
+		varValue := virtualMachine.variables.Get(nonParsedArgument)
+		virtualMachine.stack.Push(varValue)
 
 	case bytecode_gen.STORE_VAR:
-		poppedValue := virtualMachine.pop()
-		virtualMachine.variables[nonParsedArgument] = poppedValue
+		poppedValue := virtualMachine.stack.Pop()
+		virtualMachine.variables.Set(nonParsedArgument, poppedValue)
 
 	case bytecode_gen.ADD:
-		b := virtualMachine.pop()
-		a := virtualMachine.pop()
+		b := virtualMachine.stack.Pop()
+		a := virtualMachine.stack.Pop()
 
 		result := StackValue{}
 		switch a.ValueType {
@@ -136,11 +132,11 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 		}
 
 		// ToDo можно убрать для массивов как будто
-		virtualMachine.stack = append(virtualMachine.stack, result)
+		virtualMachine.stack.Push(result)
 
 	case bytecode_gen.SUB:
-		b := virtualMachine.pop()
-		a := virtualMachine.pop()
+		b := virtualMachine.stack.Pop()
+		a := virtualMachine.stack.Pop()
 
 		result := StackValue{}
 		switch a.ValueType {
@@ -152,11 +148,11 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 			panic("unsupported operation SUB for this type")
 		}
 
-		virtualMachine.stack = append(virtualMachine.stack, result)
+		virtualMachine.stack.Push(result)
 
 	case bytecode_gen.MUL:
-		b := virtualMachine.pop()
-		a := virtualMachine.pop()
+		b := virtualMachine.stack.Pop()
+		a := virtualMachine.stack.Pop()
 
 		result := StackValue{}
 		switch a.ValueType {
@@ -168,11 +164,11 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 			panic("unsupported operation MUL for this type")
 		}
 
-		virtualMachine.stack = append(virtualMachine.stack, result)
+		virtualMachine.stack.Push(result)
 
 	case bytecode_gen.DIV:
-		b := virtualMachine.pop()
-		a := virtualMachine.pop()
+		b := virtualMachine.stack.Pop()
+		a := virtualMachine.stack.Pop()
 
 		result := StackValue{}
 		if a.ValueType == INT && b.ValueType == INT {
@@ -185,112 +181,112 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 			panic("unsupported operation DIV for these types")
 		}
 
-		virtualMachine.stack = append(virtualMachine.stack, result)
+		virtualMachine.stack.Push(result)
 
 	case bytecode_gen.NEG:
-		a := virtualMachine.pop()
+		a := virtualMachine.stack.Pop()
 
 		if a.ValueType != INT {
 			panic("unsupported operation NEG for non-integer type")
 		}
 
 		result := StackValue{Value: -a.Value.(int), ValueType: INT}
-		virtualMachine.stack = append(virtualMachine.stack, result)
+		virtualMachine.stack.Push(result)
 
 	case bytecode_gen.NOT:
-		a := virtualMachine.pop()
+		a := virtualMachine.stack.Pop()
 
 		if a.ValueType != BOOL {
 			panic("unsupported operation NOT for non-boolean type")
 		}
 
 		result := StackValue{Value: !a.Value.(bool), ValueType: BOOL}
-		virtualMachine.stack = append(virtualMachine.stack, result)
+		virtualMachine.stack.Push(result)
 
 	case bytecode_gen.AND:
-		b := virtualMachine.pop()
-		a := virtualMachine.pop()
+		b := virtualMachine.stack.Pop()
+		a := virtualMachine.stack.Pop()
 
 		if a.ValueType == BOOL && b.ValueType == BOOL {
 			result := StackValue{Value: a.Value.(bool) && b.Value.(bool), ValueType: BOOL}
-			virtualMachine.stack = append(virtualMachine.stack, result)
+			virtualMachine.stack.Push(result)
 		} else {
 			panic("unsupported operation AND for non-boolean types")
 		}
 
 	case bytecode_gen.OR:
-		b := virtualMachine.pop()
-		a := virtualMachine.pop()
+		b := virtualMachine.stack.Pop()
+		a := virtualMachine.stack.Pop()
 
 		if a.ValueType == BOOL && b.ValueType == BOOL {
 			result := StackValue{Value: a.Value.(bool) || b.Value.(bool), ValueType: BOOL}
-			virtualMachine.stack = append(virtualMachine.stack, result)
+			virtualMachine.stack.Push(result)
 		} else {
 			panic("unsupported operation OR for non-boolean types")
 		}
 
 	case bytecode_gen.LESS_THAN:
-		b := virtualMachine.pop()
-		a := virtualMachine.pop()
+		b := virtualMachine.stack.Pop()
+		a := virtualMachine.stack.Pop()
 
 		if a.ValueType == INT && b.ValueType == INT {
 			result := StackValue{Value: a.Value.(int) < b.Value.(int), ValueType: BOOL}
-			virtualMachine.stack = append(virtualMachine.stack, result)
+			virtualMachine.stack.Push(result)
 		} else {
 			panic("unsupported operation LESS_THAN for these types")
 		}
 
 	case bytecode_gen.GREATER_THAN:
-		b := virtualMachine.pop()
-		a := virtualMachine.pop()
+		b := virtualMachine.stack.Pop()
+		a := virtualMachine.stack.Pop()
 
 		if a.ValueType == INT && b.ValueType == INT {
 			result := StackValue{Value: a.Value.(int) > b.Value.(int), ValueType: BOOL}
-			virtualMachine.stack = append(virtualMachine.stack, result)
+			virtualMachine.stack.Push(result)
 		} else {
 			panic("unsupported operation GREATER_THAN for these types")
 		}
 
 	case bytecode_gen.LESS_EQUAL_THAN:
-		b := virtualMachine.pop()
-		a := virtualMachine.pop()
+		b := virtualMachine.stack.Pop()
+		a := virtualMachine.stack.Pop()
 
 		if a.ValueType == INT && b.ValueType == INT {
 			result := StackValue{Value: a.Value.(int) <= b.Value.(int), ValueType: BOOL}
-			virtualMachine.stack = append(virtualMachine.stack, result)
+			virtualMachine.stack.Push(result)
 		} else {
 			panic("unsupported operation LESS_EQUAL_THAN for these types")
 		}
 
 	case bytecode_gen.GREATER_EQUAL_THAN:
-		b := virtualMachine.pop()
-		a := virtualMachine.pop()
+		b := virtualMachine.stack.Pop()
+		a := virtualMachine.stack.Pop()
 
 		if a.ValueType == INT && b.ValueType == INT {
 			result := StackValue{Value: a.Value.(int) >= b.Value.(int), ValueType: BOOL}
-			virtualMachine.stack = append(virtualMachine.stack, result)
+			virtualMachine.stack.Push(result)
 		} else {
 			panic("unsupported operation GREATER_EQUAL_THAN for these types")
 		}
 
 	case bytecode_gen.EQUAL:
-		b := virtualMachine.pop()
-		a := virtualMachine.pop()
+		b := virtualMachine.stack.Pop()
+		a := virtualMachine.stack.Pop()
 
 		if a.ValueType == b.ValueType {
 			result := StackValue{Value: a.Value == b.Value, ValueType: BOOL}
-			virtualMachine.stack = append(virtualMachine.stack, result)
+			virtualMachine.stack.Push(result)
 		} else {
 			panic("unsupported operation EQUAL for mismatched types")
 		}
 
 	case bytecode_gen.NOT_EQUAL:
-		b := virtualMachine.pop()
-		a := virtualMachine.pop()
+		b := virtualMachine.stack.Pop()
+		a := virtualMachine.stack.Pop()
 
 		if a.ValueType == b.ValueType {
 			result := StackValue{Value: a.Value != b.Value, ValueType: BOOL}
-			virtualMachine.stack = append(virtualMachine.stack, result)
+			virtualMachine.stack.Push(result)
 		} else {
 			panic("unsupported operation NOT_EQUAL for mismatched types")
 		}
@@ -304,7 +300,7 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 		}
 
 	case bytecode_gen.JUMP_IF_FALSE:
-		condition := virtualMachine.pop()
+		condition := virtualMachine.stack.Pop()
 		label := nonParsedArgument
 
 		if condition.ValueType != BOOL {
@@ -330,16 +326,16 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 			if len(virtualMachine.stack) == 0 {
 				panic("Stack underflow while initializing array")
 			}
-			newArray[size-i-1] = virtualMachine.pop() // Инициализация с вершины стека
+			newArray[size-i-1] = virtualMachine.stack.Pop() // Инициализация с вершины стека
 		}
 
 		arrayID := virtualMachine.newArrayID()
 		virtualMachine.arrays[arrayID] = newArray
-		virtualMachine.stack = append(virtualMachine.stack, StackValue{Value: arrayID, ValueType: ARRAY})
+		virtualMachine.stack.Push(StackValue{Value: arrayID, ValueType: ARRAY})
 
 	case bytecode_gen.ARRAY_GET:
-		index := virtualMachine.pop()
-		arrayRef := virtualMachine.pop()
+		index := virtualMachine.stack.Pop()
+		arrayRef := virtualMachine.stack.Pop()
 
 		if index.ValueType != INT {
 			panic("ARRAY_GET requires an integer index")
@@ -359,12 +355,12 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 			panic("Index out of bounds for ARRAY_GET")
 		}
 
-		virtualMachine.stack = append(virtualMachine.stack, arr[idx])
+		virtualMachine.stack.Push(arr[idx])
 
 	case bytecode_gen.ARRAY_SET:
-		index := virtualMachine.pop()
-		arrayRef := virtualMachine.pop()
-		pop := virtualMachine.pop()
+		index := virtualMachine.stack.Pop()
+		arrayRef := virtualMachine.stack.Pop()
+		pop := virtualMachine.stack.Pop()
 
 		if index.ValueType != INT {
 			panic("ARRAY_SET requires an integer index")
@@ -395,11 +391,40 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 		// для GC
 
 	case bytecode_gen.CALL_FUNCTION:
+		argumentCount := virtualMachine.stack.Pop()
+
+		newStack := StackStruct{}
+		for i := 0; i < argumentCount.Value.(int); i++ {
+			newStack.Push(virtualMachine.stack.Pop())
+		}
+
+		savedStack := virtualMachine.stack
+
+		virtualMachine.callStack = append(virtualMachine.callStack, savedStack)
+		virtualMachine.stack = newStack
+		virtualMachine.variables.NewScope()
+		virtualMachine.returnAddresses.Push(StackValue{virtualMachine.programCounter, INT})
+
+		virtualMachine.programCounter = virtualMachine.labels[nonParsedArgument]
 
 	case bytecode_gen.RETURN:
+		//ToDo: дописать возврат литералов (не только переменных)
+		savedStack := virtualMachine.callStack[len(virtualMachine.callStack)-1]
+
+		virtualMachine.callStack = virtualMachine.callStack[:len(virtualMachine.callStack)-1]
+
+		returnedValue := virtualMachine.stack.Pop()
+
+		virtualMachine.stack = savedStack
+		virtualMachine.stack.Push(returnedValue)
+
+		virtualMachine.variables.PopScope()
+		returnAddress := virtualMachine.returnAddresses.Pop()
+
+		virtualMachine.programCounter = returnAddress.Value.(int)
 
 	case bytecode_gen.PRINT:
-		pop := virtualMachine.pop()
+		pop := virtualMachine.stack.Pop()
 
 		if pop.ValueType == ARRAY {
 			fmt.Println(virtualMachine.arrays[pop.Value.(string)])
@@ -442,15 +467,6 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 	default:
 		fmt.Printf("Unknown command: %s\n", instruction)
 	}
-}
-
-func (virtualMachine *VirtualMachine) pop() StackValue {
-	if len(virtualMachine.stack) == 0 {
-		panic("Stack underflow")
-	}
-	value := virtualMachine.stack[len(virtualMachine.stack)-1]
-	virtualMachine.stack = virtualMachine.stack[:len(virtualMachine.stack)-1]
-	return value
 }
 
 func (virtualMachine *VirtualMachine) prepareLabels() {
