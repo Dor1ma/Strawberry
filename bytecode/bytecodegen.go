@@ -402,7 +402,7 @@ func (cg *CodeGenerator) GenerateSuperExpr(super *ast.SuperExpr) {
 
 func (cg *CodeGenerator) GenerateThisExpr(this *ast.ThisExpr) {
 	// ToDo: реализовать генерацию байткода
-	panic("npt implemented bytecode gen for this")
+	panic("not implemented bytecode gen for this")
 	cg.emit(THIS, "")
 }
 
