@@ -67,7 +67,6 @@ func (l *Lexer) match(ch rune) bool {
 }
 
 func (l *Lexer) error(msg string) {
-	// ToDo: исправить баг с позицией
 	fmt.Fprintf(os.Stderr, "%s %s\n", l.Pos().String(), msg)
 }
 

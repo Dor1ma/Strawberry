@@ -12,7 +12,7 @@ import (
 
 const prompt = ">> "
 
-// Start creates a REPL for Lox.
+// Start creates a REPL for Strawberry.
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
 	interpreter.SetEvalEnv("repl")

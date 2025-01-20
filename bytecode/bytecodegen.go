@@ -316,7 +316,7 @@ func (cg *CodeGenerator) GenerateReturnStmt(stmt *ast.ReturnStmt) {
 	}
 }
 
-/* ToDO: дописать реализацию байт кодов для классов
+/*
 func (cg *CodeGenerator) GenerateClassStmt(stmt *ast.ClassStmt) {
 	cg.Emit(OpClass, cg.AddConstant(stmt.Name))
 	if stmt.SuperClass.Name != "" {
@@ -395,13 +395,11 @@ func (cg *CodeGenerator) GenerateSetExpr(set *ast.SetExpr) {
 }
 
 func (cg *CodeGenerator) GenerateSuperExpr(super *ast.SuperExpr) {
-	// ToDo: реализовать генерацию байткода
 	panic("npt implemented bytecode gen for super")
 	cg.emit(SUPER, "")
 }
 
 func (cg *CodeGenerator) GenerateThisExpr(this *ast.ThisExpr) {
-	// ToDo: реализовать генерацию байткода
 	panic("not implemented bytecode gen for this")
 	cg.emit(THIS, "")
 }

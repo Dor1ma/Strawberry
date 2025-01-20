@@ -132,7 +132,6 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 			panic("unsupported operation ADD for this type")
 		}
 
-		// ToDo можно убрать для массивов как будто
 		virtualMachine.stack.Push(result)
 
 	case bytecode_gen.SUB:
