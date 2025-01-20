@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Dor1ma/Strawberry/ast"
 	"github.com/Dor1ma/Strawberry/token"
+	"strconv"
 )
 
 const (
@@ -38,10 +39,11 @@ const (
 	GET_PROPERTY = "GET_PROPERTY" // Получить свойство объекта
 	SET_PROPERTY = "SET_PROPERTY" // Установить свойство объекта
 
-	PRINT = "PRINT" // Вывод значения
-	SUPER = "SUPER" // Обращение к суперклассу
-	THIS  = "THIS"  // Ссылка на текущий объект
-	FUNC  = "FUNC"  // Объявление функции
+	PRINT    = "PRINT" // Вывод значения
+	SUPER    = "SUPER" // Обращение к суперклассу
+	THIS     = "THIS"  // Ссылка на текущий объект
+	FUNC     = "FUNC"  // Объявление функции
+	END_FUNC = "END_FUNC"
 
 	LABEL            = "label"        // Метка для перехода
 	FALSE_LABEL      = "false_label_" // Метка для перехода при false
@@ -54,6 +56,8 @@ const (
 
 	NULL = "NULL"
 )
+
+var isFixedLoopAnalysationEnabled = false
 
 type Bytecode struct {
 	Opcode string
@@ -126,10 +130,12 @@ func (cg *CodeGenerator) GenerateExpression(expr ast.Expression) {
 func (cg *CodeGenerator) GenerateLiteral(lit *ast.Literal) {
 	var value string
 	switch lit.Token {
-	case token.Number, token.String:
+	case token.Number:
+		value = lit.Value
+	case token.String:
 		value = lit.Value
 	case token.Nil:
-		value = "null"
+		value = NULL
 	case token.True:
 		value = "true"
 	case token.False:
@@ -181,6 +187,7 @@ func (cg *CodeGenerator) GenerateCallExpr(call *ast.CallExpr) {
 		cg.GenerateExpression(arg)
 	}
 
+	cg.emit(PUSH_CONST, strconv.Itoa(len(call.Arguments)))
 	cg.emit(CALL_FUNCTION, call.Callee.String())
 }
 
@@ -224,26 +231,40 @@ func (cg *CodeGenerator) GenerateIfStmt(ifStmt *ast.IfStmt) {
 }
 
 func (cg *CodeGenerator) GenerateWhileStmt(whileStmt *ast.WhileStmt) {
-	loopStartLabel := fmt.Sprintf("%s%d", LOOP_START_LABEL, len(cg.Bytecodes))
-	loopEndLabel := fmt.Sprintf("%s%d", LOOP_END_LABEL, len(cg.Bytecodes))
+	constantIterations := cg.analyzeFixedLoop(whileStmt)
 
-	cg.emit(LABEL, loopStartLabel)
-	cg.GenerateExpression(whileStmt.Condition)
+	if isFixedLoopAnalysationEnabled && constantIterations >= 0 {
+		for i := 0; i < constantIterations; i++ {
+			cg.GenerateStatement(whileStmt.Body)
+		}
+	} else {
+		loopStartLabel := fmt.Sprintf("%s%d", LOOP_START_LABEL, len(cg.Bytecodes))
+		loopEndLabel := fmt.Sprintf("%s%d", LOOP_END_LABEL, len(cg.Bytecodes))
 
-	cg.emit(JUMP_IF_FALSE, loopEndLabel)
+		cg.emit(LABEL, loopStartLabel)
+		cg.GenerateExpression(whileStmt.Condition)
 
-	cg.GenerateStatement(whileStmt.Body)
+		cg.emit(JUMP_IF_FALSE, loopEndLabel)
 
-	cg.emit(JUMP, loopStartLabel)
-	cg.emit(LABEL, loopEndLabel)
+		cg.GenerateStatement(whileStmt.Body)
+
+		cg.emit(JUMP, loopStartLabel)
+		cg.emit(LABEL, loopEndLabel)
+	}
 }
 
 func (cg *CodeGenerator) GenerateFunctionStmt(funcStmt *ast.FunctionStmt) {
 	cg.emit(FUNC, funcStmt.Name)
 
+	for _, arg := range funcStmt.Params {
+		cg.emit(STORE_VAR, arg.Name)
+	}
+
 	for _, stmt := range funcStmt.Body {
 		cg.GenerateStatement(stmt)
 	}
+
+	cg.emit(END_FUNC, funcStmt.Name)
 }
 
 func (cg *CodeGenerator) GeneratePrintStmt(printStmt *ast.PrintStmt) {
@@ -278,7 +299,6 @@ func (cg *CodeGenerator) GenerateStatement(stmt ast.Statement) {
 }
 
 func (cg *CodeGenerator) GenerateBlockStmt(stmt *ast.BlockStmt) {
-	cg.emit(SCOPE_START, "")
 
 	for _, statement := range stmt.Statements {
 		cg.GenerateStatement(statement)
@@ -290,13 +310,13 @@ func (cg *CodeGenerator) GenerateBlockStmt(stmt *ast.BlockStmt) {
 func (cg *CodeGenerator) GenerateReturnStmt(stmt *ast.ReturnStmt) {
 	if stmt.Value != nil {
 		cg.GenerateExpression(stmt.Value)
-		cg.emit(RETURN, stmt.Value.String())
+		cg.emit(RETURN, "")
 	} else {
 		cg.emit(PUSH_CONST, NULL)
 	}
 }
 
-/* ToDO: дописать реализацию байт кодов для классов
+/*
 func (cg *CodeGenerator) GenerateClassStmt(stmt *ast.ClassStmt) {
 	cg.Emit(OpClass, cg.AddConstant(stmt.Name))
 	if stmt.SuperClass.Name != "" {
@@ -375,13 +395,54 @@ func (cg *CodeGenerator) GenerateSetExpr(set *ast.SetExpr) {
 }
 
 func (cg *CodeGenerator) GenerateSuperExpr(super *ast.SuperExpr) {
-	// ToDo: реализовать генерацию байткода
 	panic("npt implemented bytecode gen for super")
 	cg.emit(SUPER, "")
 }
 
 func (cg *CodeGenerator) GenerateThisExpr(this *ast.ThisExpr) {
-	// ToDo: реализовать генерацию байткода
-	panic("npt implemented bytecode gen for this")
+	panic("not implemented bytecode gen for this")
 	cg.emit(THIS, "")
+}
+
+func (cg *CodeGenerator) EliminateDeadCode() {
+	usedLabels := make(map[string]bool)
+	optimizedBytecodes := []Bytecode{}
+
+	for _, bc := range cg.Bytecodes {
+		if bc.Opcode == JUMP || bc.Opcode == JUMP_IF_FALSE {
+			usedLabels[bc.Arg] = true
+		} else if bc.Opcode == LABEL {
+			usedLabels[bc.Arg] = usedLabels[bc.Arg]
+		}
+	}
+
+	for _, bc := range cg.Bytecodes {
+		if bc.Opcode == LABEL && !usedLabels[bc.Arg] {
+			continue
+		}
+		optimizedBytecodes = append(optimizedBytecodes, bc)
+	}
+
+	cg.Bytecodes = optimizedBytecodes
+}
+
+func (cg *CodeGenerator) analyzeFixedLoop(whileStmt *ast.WhileStmt) int {
+	var cond, ok = whileStmt.Condition.(*ast.BinaryExpr)
+	if ok {
+		if cond.Operator == token.Less || cond.Operator == token.LessThanOrEqual {
+			if _, ok := cond.Left.(*ast.VariableExpr); ok {
+				if right, ok := cond.Right.(*ast.Literal); ok {
+					iterations, err := strconv.Atoi(right.Value)
+					if err == nil {
+						return iterations
+					}
+				}
+			}
+		}
+	}
+	return -1
+}
+
+func (cg *CodeGenerator) EnableLoopEnrolling() {
+	isFixedLoopAnalysationEnabled = true
 }

@@ -278,7 +278,6 @@ func (p *Parser) parseExpression() ast.Expression {
 func (p *Parser) parseAssignment() ast.Expression {
 	expr := p.parseOr()
 	if p.match(token.Equal) {
-		// ToDo: подумать над рекурсией здесь..
 		v := p.parseAssignment()
 		switch e := expr.(type) {
 		default:
@@ -452,7 +451,6 @@ func (p *Parser) finishCall(expr ast.Expression) ast.Expression {
 	}
 	for {
 		arg := p.parseExpression()
-		// ToDo: ?
 		if len(call.Arguments) >= 255 {
 			p.error("Cannot have more than 255 arguments.")
 		}

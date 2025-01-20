@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/Dor1ma/Strawberry/ast"
 	bytecodegen "github.com/Dor1ma/Strawberry/bytecode"
 	"github.com/Dor1ma/Strawberry/cmd/strawberry/repl"
 	"github.com/Dor1ma/Strawberry/lexer"
@@ -14,7 +13,10 @@ import (
 
 func main() {
 	if len(os.Args) >= 2 {
-		name := os.Args[1]
+		name := ".\\tasks\\001-bubble-sort.berry"
+		//name := ".\\tasks\\002-factorial.berry"
+		//name := ".\\tasks\\003-era.berry"
+
 		b, err := ioutil.ReadFile(name)
 		if err != nil {
 			panic(err)
@@ -22,21 +24,17 @@ func main() {
 		l := lexer.New(string(b))
 		p := parser.New(l)
 		if statements, err := p.Parse(); err == nil && len(statements) != 0 {
-
-			/*interpreter.Interpret(statements)*/
-
-			for i := 0; i < len(statements); i++ {
-				fmt.Println(ast.PrettyPrint(statements[i], 1))
-			}
-
 			generator := bytecodegen.CodeGenerator{}
 
+			generator.EnableLoopEnrolling()
+
 			generator.GenerateProgram(statements)
-			generator.PrintBytecode()
+
+			generator.EliminateDeadCode()
 
 			vm := virtm.NewVirtualMachine(generator.GetBytecodes())
 
-			vm.PrintBytecode()
+			vm.EnableTailRecursionOptimization()
 
 			vm.Run()
 		}

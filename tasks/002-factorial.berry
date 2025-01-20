@@ -7,5 +7,4 @@ fun a(n) {
     }
 }
 
-var b = 20;
-print a(b);
+print a(20);
