@@ -57,6 +57,8 @@ const (
 	NULL = "NULL"
 )
 
+var isFixedLoopAnalysationEnabled = false
+
 type Bytecode struct {
 	Opcode string
 	Arg    string
@@ -229,18 +231,26 @@ func (cg *CodeGenerator) GenerateIfStmt(ifStmt *ast.IfStmt) {
 }
 
 func (cg *CodeGenerator) GenerateWhileStmt(whileStmt *ast.WhileStmt) {
-	loopStartLabel := fmt.Sprintf("%s%d", LOOP_START_LABEL, len(cg.Bytecodes))
-	loopEndLabel := fmt.Sprintf("%s%d", LOOP_END_LABEL, len(cg.Bytecodes))
+	constantIterations := cg.analyzeFixedLoop(whileStmt)
 
-	cg.emit(LABEL, loopStartLabel)
-	cg.GenerateExpression(whileStmt.Condition)
+	if isFixedLoopAnalysationEnabled && constantIterations >= 0 {
+		for i := 0; i < constantIterations; i++ {
+			cg.GenerateStatement(whileStmt.Body)
+		}
+	} else {
+		loopStartLabel := fmt.Sprintf("%s%d", LOOP_START_LABEL, len(cg.Bytecodes))
+		loopEndLabel := fmt.Sprintf("%s%d", LOOP_END_LABEL, len(cg.Bytecodes))
 
-	cg.emit(JUMP_IF_FALSE, loopEndLabel)
+		cg.emit(LABEL, loopStartLabel)
+		cg.GenerateExpression(whileStmt.Condition)
 
-	cg.GenerateStatement(whileStmt.Body)
+		cg.emit(JUMP_IF_FALSE, loopEndLabel)
 
-	cg.emit(JUMP, loopStartLabel)
-	cg.emit(LABEL, loopEndLabel)
+		cg.GenerateStatement(whileStmt.Body)
+
+		cg.emit(JUMP, loopStartLabel)
+		cg.emit(LABEL, loopEndLabel)
+	}
 }
 
 func (cg *CodeGenerator) GenerateFunctionStmt(funcStmt *ast.FunctionStmt) {
@@ -289,13 +299,12 @@ func (cg *CodeGenerator) GenerateStatement(stmt ast.Statement) {
 }
 
 func (cg *CodeGenerator) GenerateBlockStmt(stmt *ast.BlockStmt) {
-	/*	cg.emit(SCOPE_START, "")*/
 
 	for _, statement := range stmt.Statements {
 		cg.GenerateStatement(statement)
 	}
-	/*
-		cg.emit(SCOPE_END, "")*/
+
+	cg.emit(SCOPE_END, "")
 }
 
 func (cg *CodeGenerator) GenerateReturnStmt(stmt *ast.ReturnStmt) {
@@ -395,4 +404,47 @@ func (cg *CodeGenerator) GenerateThisExpr(this *ast.ThisExpr) {
 	// ToDo: реализовать генерацию байткода
 	panic("npt implemented bytecode gen for this")
 	cg.emit(THIS, "")
+}
+
+func (cg *CodeGenerator) EliminateDeadCode() {
+	usedLabels := make(map[string]bool)
+	optimizedBytecodes := []Bytecode{}
+
+	for _, bc := range cg.Bytecodes {
+		if bc.Opcode == JUMP || bc.Opcode == JUMP_IF_FALSE {
+			usedLabels[bc.Arg] = true
+		} else if bc.Opcode == LABEL {
+			usedLabels[bc.Arg] = usedLabels[bc.Arg]
+		}
+	}
+
+	for _, bc := range cg.Bytecodes {
+		if bc.Opcode == LABEL && !usedLabels[bc.Arg] {
+			continue
+		}
+		optimizedBytecodes = append(optimizedBytecodes, bc)
+	}
+
+	cg.Bytecodes = optimizedBytecodes
+}
+
+func (cg *CodeGenerator) analyzeFixedLoop(whileStmt *ast.WhileStmt) int {
+	var cond, ok = whileStmt.Condition.(*ast.BinaryExpr)
+	if ok {
+		if cond.Operator == token.Less || cond.Operator == token.LessThanOrEqual {
+			if _, ok := cond.Left.(*ast.VariableExpr); ok {
+				if right, ok := cond.Right.(*ast.Literal); ok {
+					iterations, err := strconv.Atoi(right.Value)
+					if err == nil {
+						return iterations
+					}
+				}
+			}
+		}
+	}
+	return -1
+}
+
+func (cg *CodeGenerator) EnableLoopEnrolling() {
+	isFixedLoopAnalysationEnabled = true
 }

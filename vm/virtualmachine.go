@@ -14,6 +14,8 @@ const (
 	ARRAY  = "array"
 )
 
+var isTailOptimizationEnabled = false
+
 type ValueType string
 
 type StackValue struct {
@@ -42,7 +44,7 @@ type VirtualMachine struct {
 	programCounter  int
 	variables       Variables
 	labels          map[string]int
-	arrays          map[string][]StackValue
+	heap            map[string]GCObject
 	arrayCounter    int
 	callStack       []StackStruct
 	returnAddresses StackStruct
@@ -61,7 +63,7 @@ func NewVirtualMachine(bytecode []string) *VirtualMachine {
 		variables:       *CreateVariables(),
 		labels:          make(map[string]int),
 		arrayCounter:    0,
-		arrays:          make(map[string][]StackValue),
+		heap:            make(map[string]GCObject),
 		returnAddresses: make(StackStruct, 0),
 	}
 }
@@ -122,9 +124,11 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 			result.Value = a.Value.(string) + b.Value.(string)
 			result.ValueType = STRING
 		case ARRAY:
-			arr := virtualMachine.arrays[a.Value.(string)]
-			virtualMachine.arrays[a.Value.(string)] = append(arr, b)
+			arr := virtualMachine.heap[a.Value.(string)]
 
+			arr.data = append(arr.data, b)
+
+			virtualMachine.heap[a.Value.(string)] = arr
 			result.Value = a.Value.(string)
 			result.ValueType = ARRAY
 		default:
@@ -322,6 +326,12 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 		}
 
 		newArray := make([]StackValue, size)
+
+		obj := GCObject{
+			data:   newArray,
+			marked: false,
+		}
+
 		for i := 0; i < size; i++ {
 			if len(virtualMachine.stack) == 0 {
 				panic("Stack underflow while initializing array")
@@ -330,7 +340,7 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 		}
 
 		arrayID := virtualMachine.newArrayID()
-		virtualMachine.arrays[arrayID] = newArray
+		virtualMachine.heap[arrayID] = obj
 		virtualMachine.stack.Push(StackValue{Value: arrayID, ValueType: ARRAY})
 
 	case bytecode_gen.ARRAY_GET:
@@ -345,17 +355,17 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 		}
 
 		arrayID := arrayRef.Value.(string)
-		arr, exists := virtualMachine.arrays[arrayID]
+		arr, exists := virtualMachine.heap[arrayID]
 		if !exists {
 			panic("Array not found")
 		}
 
 		idx := index.Value.(int)
-		if idx < 0 || idx >= len(arr) {
+		if idx < 0 || idx >= len(arr.data) {
 			panic("Index out of bounds for ARRAY_GET")
 		}
 
-		virtualMachine.stack.Push(arr[idx])
+		virtualMachine.stack.Push(arr.data[idx])
 
 	case bytecode_gen.ARRAY_SET:
 		index := virtualMachine.stack.Pop()
@@ -370,25 +380,25 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 		}
 
 		arrayID := arrayRef.Value.(string)
-		arr, exists := virtualMachine.arrays[arrayID]
+		arr, exists := virtualMachine.heap[arrayID]
 		if !exists {
 			panic("Array not found")
 		}
 
 		idx := index.Value.(int)
-		if idx < 0 || idx >= len(arr) {
+		if idx < 0 || idx >= len(arr.data) {
 			panic("Index out of bounds for ARRAY_SET")
 		}
 
-		arr[idx] = pop
-		virtualMachine.arrays[arrayID] = arr
+		arr.data[idx] = pop
+		virtualMachine.heap[arrayID] = arr
 
 	case bytecode_gen.LABEL:
 
 	case bytecode_gen.FALSE_LABEL, bytecode_gen.LOOP_START_LABEL, bytecode_gen.LOOP_END_LABEL, bytecode_gen.SCOPE_START:
 
 	case bytecode_gen.SCOPE_END:
-		// для GC
+		virtualMachine.Collect()
 
 	case bytecode_gen.CALL_FUNCTION:
 		argumentCount := virtualMachine.stack.Pop()
@@ -398,8 +408,17 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 			newStack.Push(virtualMachine.stack.Pop())
 		}
 
-		savedStack := virtualMachine.stack
+		if isTailOptimizationEnabled {
+			nextInstruction := virtualMachine.bytecode[virtualMachine.programCounter]
+			if strings.TrimSpace(nextInstruction) == bytecode_gen.RETURN {
+				virtualMachine.stack = newStack
+				virtualMachine.programCounter = virtualMachine.labels[nonParsedArgument]
+				virtualMachine.variables.NewScope()
+				return
+			}
+		}
 
+		savedStack := virtualMachine.stack
 		virtualMachine.callStack = append(virtualMachine.callStack, savedStack)
 		virtualMachine.stack = newStack
 		virtualMachine.variables.NewScope()
@@ -408,26 +427,26 @@ func (virtualMachine *VirtualMachine) execute(command string) {
 		virtualMachine.programCounter = virtualMachine.labels[nonParsedArgument]
 
 	case bytecode_gen.RETURN:
-		//ToDo: дописать возврат литералов (не только переменных)
-		savedStack := virtualMachine.callStack[len(virtualMachine.callStack)-1]
+		if len(virtualMachine.callStack) == 0 {
+			return
+		}
 
+		savedStack := virtualMachine.callStack[len(virtualMachine.callStack)-1]
 		virtualMachine.callStack = virtualMachine.callStack[:len(virtualMachine.callStack)-1]
 
 		returnedValue := virtualMachine.stack.Pop()
-
 		virtualMachine.stack = savedStack
 		virtualMachine.stack.Push(returnedValue)
 
 		virtualMachine.variables.PopScope()
 		returnAddress := virtualMachine.returnAddresses.Pop()
-
 		virtualMachine.programCounter = returnAddress.Value.(int)
 
 	case bytecode_gen.PRINT:
 		pop := virtualMachine.stack.Pop()
 
 		if pop.ValueType == ARRAY {
-			fmt.Println(virtualMachine.arrays[pop.Value.(string)])
+			fmt.Println(virtualMachine.heap[pop.Value.(string)])
 		} else {
 			fmt.Println(pop)
 		}
@@ -512,4 +531,8 @@ func (virtualMachine *VirtualMachine) parseArgument(arg string) (interface{}, Va
 	}
 
 	return arg, STRING
+}
+
+func (virtualMachine *VirtualMachine) EnableTailRecursionOptimization() {
+	isTailOptimizationEnabled = true
 }
